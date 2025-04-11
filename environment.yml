@@ -1,0 +1,12 @@
+name: harmonization_cms
+channels:
+  - conda-forge
+  - defaults
+  - bioconda
+dependencies:
+  - python=3.11
+  - pyarrow
+  - numpy
+  - pyyaml
+  - duckdb
+  - pandas

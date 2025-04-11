@@ -23,71 +23,119 @@ tables:
           source: dual_01
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_02:
           source: dual_02
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_03:
           source: dual_03
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_04:
           source: dual_04
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_05:
           source: dual_05
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_06:
           source: dual_06
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_07:
           source: dual_07
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_08:
           source: dual_08
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_09:
           source: dual_09
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_10:
           source: dual_10
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_11:
           source: dual_11
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
       - dual_12:
           source: dual_12
           type: INT
           cast:
-            '*': "{column_name}::INT"
-      - 
-      # - dual_indicators:
-          # type: CHAR(1)[12]
-          # optional: true
-          # m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-          # source:
-          #   - DUAL_{m}
-          # cast:
-          #   '*': "[{columns}]"
+            '*': >
+              CASE 
+                WHEN {column_name} ~ '^\d+$' THEN {column_name}::INT 
+                ELSE NULL 
+              END
+
+  #     # - dual_indicators: # save for normalization
+  #         # type: CHAR(1)[12]
+  #         # optional: true
+  #         # m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+  #         # source:
+  #         #   - DUAL_{m}
+  #         # cast:
+  #         #   '*': "[{columns}]"
   ps:
     name: "ps"
     description: "Patient Summary view combining multiple MBSF files"
@@ -100,12 +148,12 @@ tables:
     columns:
       - bene_id:
           source:
-          - BENE_ID
-          - Intbid # sas beneid
+          - bene_id
+          - intbid # sas beneid
       - year:
           source: 
-          - RFRNC_YR
-          - ENROLYR
+          - rfrnc_yr
+          - enrolyr
           cast:
             '*': >
               CASE 
@@ -203,44 +251,113 @@ tables:
           reference: https://resdac.org/cms-data/variables/research-triangle-institute-rti-race-code
           # optional: true
           source: RTI_RACE_CD
-      # # - hmo_indicators:
-      # #     type: CHAR(1)[12]
-      # #     optional: false
-      # #     description: Array of indicators if the beneficiary was enrolled in HMO during a given month
-      # #     reference: https://resdac.org/cms-data/variables/hmo-indicator
-      # #     m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-      # #     source:
-      # #       - hmoind
-      # #       - HMOIND{m}
-      # #       # - hmoind12
-      # #       # - bene_hmo_ind_{m}
-      # #     cast:
-      # #       'character varying': "[{columns}, NULL]"
-      # - hmo_cvg_count:
-      #     type: INT
-      #     optional: false
-      #     description: Number of months during a given year, the beneficiary received their Part A and Part B benefits through a managed care plan
-      #     reference: https://requests.resdac.org/cms-data/variables/hmo-coverage-count
-      #     source:
-      #       - HMO_MO
-      #       # - hmocovg
-      #       # - bene_hmo_cvrage_tot_mons
-      #     cast:
-      #       '*': "CASE WHEN {column_name} IS NULL THEN 0 ELSE {column_name}::INT END"
-      # - buyin_indicators:
-      #     type: CHAR(1)[12]
-      #     # optional: true
-      #     description: |
-      #       Array of indicators if the beneficiary’s state of residence paid his/her monthly
-      #       premium for Part B coverage (and Part A if necessary). State Medicaid programs
-      #       can pay those premiums for certain dual eligibles; this action is called
-      #       “buying in” and so this variable is the “buy-in code.”
-      #     reference: https://resdac.org/cms-data/variables/medicare-entitlementbuy-indicator
-      #     m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-      #     source:
-      #       # - medicare_buy_in
-      #       - BUYIN{m}
-      #       # - buyin12
-      #       # - bene_mdcr_entlmt_buyin_ind_$m
-      #     cast:
-      #       'character varying': "[{columns}, NULL]"
+  #     - hmo_indicators:
+  #         type: CHAR(1)[12]
+  #         optional: false
+  #         description: Array of indicators if the beneficiary was enrolled in HMO during a given month
+  #         reference: https://resdac.org/cms-data/variables/hmo-indicator
+  #         source:
+  #           - hmoind
+  #           - hmoind12
+  #         cast:
+  #           'character varying': "[{columns}, NULL]"
+  #     - hmo_cvg_count:
+  #         type: INT
+  #         optional: false
+  #         description: Number of months during a given year, the beneficiary received their Part A and Part B benefits through a managed care plan
+  #         reference: https://requests.resdac.org/cms-data/variables/hmo-coverage-count
+  #         source:
+  #           - HMO_MO
+  #           - hmocovg
+  #           - bene_hmo_cvrage_tot_mons
+  #         cast:
+  #           '*': "CASE WHEN {column_name} IS NULL THEN 0 ELSE {column_name}::INT END"
+  #     - buyin01:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN01
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin02:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN02
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin03:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN03
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin04:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN04
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin05:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN05
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin06:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN06
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin07:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN07
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin08:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN08
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin09:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN09
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin10:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN10
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin11:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN11
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin12:
+  #         type: CHAR(2)
+  #         source:
+  #           - BUYIN12
+  #         cast:
+  #           '*': "{column_name}::VARCHAR"
+  #     - buyin_indicators:
+  #         type: CHAR(1)[12]
+  #         # optional: true
+  #         description: |
+  #           Array of indicators if the beneficiary’s state of residence paid his/her monthly
+  #           premium for Part B coverage (and Part A if necessary). State Medicaid programs
+  #           can pay those premiums for certain dual eligibles; this action is called
+  #           “buying in” and so this variable is the “buy-in code.”
+  #         reference: https://resdac.org/cms-data/variables/medicare-entitlementbuy-indicator
+  #         # m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+  #         source:
+  #           - medicare_buy_in
+  #           # - BUYIN{m}
+  #           - buyin12
+  #           # - bene_mdcr_entlmt_buyin_ind_$m
+  #         # cast:
+  #         #   'character varying': "[{columns}, NULL]"
