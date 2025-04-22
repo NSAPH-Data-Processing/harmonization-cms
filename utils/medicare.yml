@@ -149,79 +149,79 @@ tables:
       - bene_id:
           source:
           - bene_id
-          - intbid # sas beneid
+          - intbid  # "beneid" for 1999 - 2002 (pre processed sas)
+          - bid_5333_1 # "beneid" for 2003 - 2005 (pre processed sas)
+          - bid_5333_3 # "beneid" for 2006 (pre processed sas)
+          cast:
+            '*': "{column_name}::VARCHAR"
       - year:
           source: 
-          - rfrnc_yr
-          - enrolyr
+          - rfrnc_yr # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+          - enrolyr # 1999, 2000, 2001, 2002
+          - enroll_yr # 2009, 2010
+          - bene_enrollment_ref_yr # 2007, 2008
           cast:
             '*': >
               CASE 
-                WHEN {column_name}::int < 20 THEN (2000 + {column_name}::int) 
-                WHEN (20 < {column_name}::int AND {column_name}::int < 100) THEN (1900 + {column_name}::int) 
-                WHEN {column_name} IS NULL THEN 2000 
-                ELSE {column_name}::int 
+                WHEN {column_name}::INT < 20 THEN (2000 + {column_name}::INT) 
+                WHEN (20 < {column_name}::INT AND {column_name}::INT < 100) THEN (1900 + {column_name}::INT) 
+                WHEN {column_name} IS NULL THEN NULL 
+                ELSE {column_name}::INT 
               END
       - zip:
           source: 
-          - BENE_ZIP
-          - ZIPCODE
+          - bene_zip # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014
+          - bene_zip_cd # 2007, 2008
+          - zip # 2009, 2010
+          - zipcode # 1999, 2000, 2001, 2002
+          - zip_cd # 2015, 2016, 2017, 2018
           type: INT
           cast:
-            numeric: "(CASE WHEN {column_name} < 100000 THEN {column_name}::int ELSE ({column_name}/10000)::INT END)"
-            "character varying": "SUBSTRING({column_name} FROM 1 FOR 5)::INT"
-            integer: "{column_name}::INT"
+            '*': "{column_name}::INT"
       - state:
           source: 
-          - STATE_CD
-          - STATE
-          type: CHAR(2)
+          - state_cd # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+          - state # 1999, 2000, 2001, 2002
+          - state_code # 2007, 2008
+          - ssa_state # 2009, 2010
+          type: INT
       - dob:
           type: date
           description: Date of birth
           cast:
-            "character varying": "STRPTIME({column_name}, '%Y%m%d')"
-            numeric: "STRPTIME(LPAD(CAST({column_name} AS VARCHAR), 8, '0'), '%Y%m%d')"
+            VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN STRPTIME({column_name}, '%Y%m%d') ELSE NULL END"
+            DOUBLE: "CASE WHEN {column_name} >= 19000000 THEN STRPTIME(LPAD(CAST({column_name} AS VARCHAR), 8, '0'), '%Y%m%d') ELSE NULL END"
           source:
-            - BENE_DOB
-            - DOB
-            # - bene_birth_dt
+            - bene_dob # 2003, 2004, 2005, 2006, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - dob # 1999, 2000, 2001, 2002
+            - bene_birth_dt # 2007, 2008
       - age:
           type: INT
           description: Age on January 1 of a given year, if provided
           optional: true
           source:
-            - AGE
-            # - bene_age_at_beg_ref_yr
+            - age # 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - bene_age_at_beg_ref_yr # 2007, 2008
           cast:
             '*': "{column_name}::INT"
       - dod:
           type: date
           description: Date of beneficiary death, if available
           cast:
-            "character varying": >
-              CASE 
-                WHEN {column_name} = '00000000' THEN NULL 
-                ELSE STRPTIME({column_name}, '%Y%m%d') 
-              END
-
-            numeric: >
-              CASE 
-                WHEN {column_name} < 19000000 THEN NULL 
-                ELSE STRPTIME(LPAD(CAST({column_name} AS VARCHAR), 8, '0'), '%Y%m%d') 
-              END
+            VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN STRPTIME({column_name}, '%Y%m%d') ELSE NULL END"
+            DOUBLE: "CASE WHEN {column_name} >= 19000000 THEN STRPTIME(LPAD(CAST({column_name} AS VARCHAR), 8, '0'), '%Y%m%d') ELSE NULL END"
           source:
-            - DEATH_DT
-            - BEF_DOD
-            # - bene_dod
-            # - bene_death_dt
+            - death_dt # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - bef_dod # 1999, 2000, 2001, 2002
+            - bene_dod # 2009, 2010
+            - bene_death_dt # 2007, 2008
       - county:
           type: VARCHAR
           description: CMS provided county code
-          source:
-            - CNTY_CD
-            # - sas_county # no county column in sas dnm file
-            # - bene_age_at_beg_ref_yr
+          source: # no county code for 1999 - 2002
+            - cnty_cd # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - bene_county_cd # 2007, 2008
+            - ssa_county # 2009, 2010
           cast:
             '*': "{column_name}::VARCHAR"
       - sex:
@@ -230,134 +230,96 @@ tables:
           cast:
             '*': "{column_name}::VARCHAR"
           source:
-            - SEX
-            # - bene_sex_ident_cd
+            - sex # 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - bene_sex_ident_cd # 2007, 2008
       - race:
           reference: https://resdac.org/cms-data/variables/beneficiary-race-code-ffs
           type: VARCHAR
           cast:
             '*': "{column_name}::VARCHAR"
           source:
-            # - bene_race_cd
-            - RACE
-      - dod_ndi: # not in sas
+            - bene_race_cd # 2007, 2008
+            - race # 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+      - dod_ndi: 
           description: This variable is the date of death as reported on the Beneficiary’s death certificate.
           reference: https://resdac.org/cms-data/variables/ndi-date-deathmbsf
           # optional: true
-          source:  NDI_DEATH_DT
+          source:  ndi_death_dt # 2011, 2012, 2013, 2014
           type: DATE
-      - race_rti: # not in sas
+      - race_rti: 
           description: Research Triangle Institute (RTI) Race Code
           reference: https://resdac.org/cms-data/variables/research-triangle-institute-rti-race-code
           # optional: true
-          source: RTI_RACE_CD
-  #     - hmo_indicators:
-  #         type: CHAR(1)[12]
-  #         optional: false
-  #         description: Array of indicators if the beneficiary was enrolled in HMO during a given month
-  #         reference: https://resdac.org/cms-data/variables/hmo-indicator
-  #         source:
-  #           - hmoind
-  #           - hmoind12
-  #         cast:
-  #           'character varying': "[{columns}, NULL]"
-  #     - hmo_cvg_count:
-  #         type: INT
-  #         optional: false
-  #         description: Number of months during a given year, the beneficiary received their Part A and Part B benefits through a managed care plan
-  #         reference: https://requests.resdac.org/cms-data/variables/hmo-coverage-count
-  #         source:
-  #           - HMO_MO
-  #           - hmocovg
-  #           - bene_hmo_cvrage_tot_mons
-  #         cast:
-  #           '*': "CASE WHEN {column_name} IS NULL THEN 0 ELSE {column_name}::INT END"
-  #     - buyin01:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN01
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin02:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN02
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin03:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN03
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin04:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN04
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin05:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN05
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin06:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN06
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin07:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN07
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin08:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN08
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin09:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN09
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin10:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN10
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin11:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN11
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin12:
-  #         type: CHAR(2)
-  #         source:
-  #           - BUYIN12
-  #         cast:
-  #           '*': "{column_name}::VARCHAR"
-  #     - buyin_indicators:
-  #         type: CHAR(1)[12]
-  #         # optional: true
-  #         description: |
-  #           Array of indicators if the beneficiary’s state of residence paid his/her monthly
-  #           premium for Part B coverage (and Part A if necessary). State Medicaid programs
-  #           can pay those premiums for certain dual eligibles; this action is called
-  #           “buying in” and so this variable is the “buy-in code.”
-  #         reference: https://resdac.org/cms-data/variables/medicare-entitlementbuy-indicator
-  #         # m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-  #         source:
-  #           - medicare_buy_in
-  #           # - BUYIN{m}
-  #           - buyin12
-  #           # - bene_mdcr_entlmt_buyin_ind_$m
-  #         # cast:
-  #         #   'character varying': "[{columns}, NULL]"
+          source: rti_race_cd # 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+      - hmo_indicators:
+          type: CHAR(1)[12]
+          optional: false
+          description: Array of indicators if the beneficiary was enrolled in HMO during a given month
+          reference: https://resdac.org/cms-data/variables/hmo-indicator
+          source:
+
+            - hmoind # 1999, 2000, 2001, 2002, 2009, 2010 (already in array format)
+            - hmoind12 # only for years that are already in array format (2003, 2004, 2005, 2006)
+            - hmoind{m} # 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 (note hmoind12 needs to be used here to build the array. it is diff from hmoind12 from 2003-2006)
+            - bene_hmo_ind_{m} # 2007, 2008
+          # cast:
+          #   'character varying': "[{columns}, NULL]"
+      - hmo_cvg_count:
+          type: INT
+          optional: false
+          description: Number of months during a given year, the beneficiary received their Part A and Part B benefits through a managed care plan
+          reference: https://requests.resdac.org/cms-data/variables/hmo-coverage-count
+          source:
+            - hmo_mo # 2003, 2004, 2005, 2006, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - hmocovg # 1999, 2000, 2001, 2002
+            - bene_hmo_cvrage_tot_mons # 2007, 2008
+          cast:
+            '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::INT END"
+
+      - buyin_indicators:
+          # type: CHAR(1)[12]
+          optional: true
+          description: |
+            Array of indicators if the beneficiary’s state of residence paid his/her monthly
+            premium for Part B coverage (and Part A if necessary). State Medicaid programs
+            can pay those premiums for certain dual eligibles; this action is called
+            “buying in” and so this variable is the “buy-in code.”
+          reference: https://resdac.org/cms-data/variables/medicare-entitlementbuy-indicator
+          m: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+          source:
+            - medicare_buy_in # 2009, 2010
+            - buyin{m} # 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - buyin12 # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 (array for 2003-2006)
+            - bene_mdcr_entlmt_buyin_ind_{m} # 2007, 2008
+          # cast:
+          #   'character varying': string_to_array({column_name}, NULL)
+      - buyin_cvg_count:
+                  type: INT
+                  optional: false
+                  description: Number of months during a given year, during the year when the beneficiary premium was paid by the state. 
+                  reference: https://resdac.org/cms-data/variables/state-buy-coverage-count
+                  source:
+                    - buyin_mo # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+                    - buycovg # 1999, 2000, 2001, 2002
+                    - state_buy_in_mo # 2009, 2010
+                    - bene_state_buyin_tot_mons # 2007, 2008
+                  cast:
+                    '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::INT END"
+      - orec:
+          type: INT
+         # optional: true
+          description: The original entitlement reason code
+          source:
+            - orec # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - orig_ent # 1999, 2000, 2001, 2002, 2009, 2010
+            - bene_entlmt_rsn_orig # 2007, 2008
+          cast:
+            '*': "{column_name}::INT"
+      - curec:
+          type: INT
+          optional: true
+          source:
+            - cur_ent # 1999, 2000, 2001, 2002, 2009, 2010
+            - bene_entlmt_rsn_curr # 2007, 2008
+          cast:
+            '*': "{column_name}::INT"

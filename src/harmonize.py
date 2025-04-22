@@ -29,13 +29,13 @@ def get_parquet_files(basepath, year, path_patterns):
 # build query based on yaml for a given table 
 def construct_query(table_config, parquet_files):
     columns = []
-    # extract all column names from parquet file
-    query = f"SELECT * FROM read_parquet('{parquet_files[0]}') LIMIT 0"
-    df = duckdb.query(query).to_df()
-    file_schema = set(col.lower() for col in df.columns)
-    
-    for col in table_config.get("columns", []):
 
+    # Extract both column names and their DuckDB-inferred types
+    query = f"DESCRIBE SELECT * FROM read_parquet('{parquet_files[0]}') LIMIT 0"
+    schema_df = duckdb.query(query).to_df()
+    file_schema = {row['column_name'].lower(): row['column_type'].upper() for _, row in schema_df.iterrows()}
+
+    for col in table_config.get("columns", []):
         col_name = list(col.keys())[0]
         col_def = col[col_name]
 
@@ -44,36 +44,63 @@ def construct_query(table_config, parquet_files):
             continue
 
         cast_dict = col_def.get("cast", {})
-        col_type = str(col_def.get("type", "")).lower()
+        cast_dict = {k.upper(): v for k, v in cast_dict.items()}
 
-        # --- Case 2: Column with single or multiple source options ---
         source_expr = col_def.get("source")
         selected_source = None
 
         if isinstance(source_expr, list):
             for candidate in source_expr:
-                if file_schema is None or candidate.lower() in file_schema:
+                if "{m}" not in candidate and candidate.lower() in file_schema:
                     selected_source = candidate
                     break
         elif isinstance(source_expr, str):
-            # Allow passthrough SQL expressions even if not in schema
             if any(tok in source_expr.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"]):
                 selected_source = source_expr
-            elif file_schema is None or source_expr.lower() in file_schema:
+            elif source_expr.lower() in file_schema:
                 selected_source = source_expr
 
-        if not selected_source:
+        if not selected_source and not any("{m}" in s for s in source_expr if isinstance(source_expr, list)):
             print(f"'{col_name}' - No valid source found in schema. Creating column with NULL.")
             columns.append(f"NULL AS {col_name}")
             continue
 
-        cast_template = (
-            cast_dict.get(col_type) or
-            cast_dict.get("*") or
-            "{column_name}"
-        )
+        if col_name == "hmo_indicators":
+            monthly_cols = []
+            found_explicit_array = False
 
-        if any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"]):
+            for candidate in source_expr:
+                if "{m}" in candidate:
+                    for m in range(1, 13):
+                        m_str = f"{m:02d}"
+                        column_name = candidate.format(m=m_str).lower()
+                        if column_name in file_schema:
+                            monthly_cols.append(f"CAST({column_name} AS VARCHAR)")
+                        else:
+                            monthly_cols.append("NULL")
+                elif candidate.lower() in file_schema:
+                    # Treat known "array-like" varchar fields (e.g., '000000000000')
+                    found_explicit_array = True
+                    expr = f"list_transform(range(12), i -> CAST(substr({candidate}, i + 1, 1) AS VARCHAR))"
+                    columns.append(f"{expr} AS {col_name}")
+                    break
+
+            if not found_explicit_array:
+                if monthly_cols:
+                    array_expr = f"array_value({', '.join(monthly_cols)})"
+                    columns.append(f"{array_expr} AS {col_name}")
+                else:
+                    print(f"'{col_name}' - No valid columns found for array construction. NULL inserted.")
+                    columns.append(f"NULL AS {col_name}")
+            continue
+
+        # --- Default logic ---
+        is_sql_expr = any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"])
+        detected_type = file_schema.get(selected_source.lower()) if not is_sql_expr else None
+        col_type = detected_type or str(col_def.get("type", "")).upper()
+        cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
+
+        if is_sql_expr:
             expr = selected_source
         else:
             expr = cast_template.format(column_name=selected_source)
@@ -88,6 +115,95 @@ def construct_query(table_config, parquet_files):
         SELECT {columns_str}
         FROM read_parquet([{files_str}]);
     """
+def construct_query(table_config, parquet_files):
+    columns = []
+
+    # Extract both column names and their DuckDB-inferred types
+    query = f"DESCRIBE SELECT * FROM read_parquet('{parquet_files[0]}') LIMIT 0"
+    schema_df = duckdb.query(query).to_df()
+    file_schema = {row['column_name'].lower(): row['column_type'].upper() for _, row in schema_df.iterrows()}
+
+    for col in table_config.get("columns", []):
+        col_name = list(col.keys())[0]
+        col_def = col[col_name]
+
+        if not col_def:
+            print(f"Warning: column definition for '{col_name}' is None. Skipping.")
+            continue
+
+        cast_dict = col_def.get("cast", {})
+        cast_dict = {k.upper(): v for k, v in cast_dict.items()}
+
+        source_expr = col_def.get("source")
+        selected_source = None
+
+        if isinstance(source_expr, list):
+            for candidate in source_expr:
+                if "{m}" not in candidate and candidate.lower() in file_schema:
+                    selected_source = candidate
+                    break
+        elif isinstance(source_expr, str):
+            if any(tok in source_expr.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"]):
+                selected_source = source_expr
+            elif source_expr.lower() in file_schema:
+                selected_source = source_expr
+
+        if not selected_source and not any("{m}" in s for s in source_expr if isinstance(source_expr, list)):
+            print(f"'{col_name}' - No valid source found in schema. Creating column with NULL.")
+            columns.append(f"NULL AS {col_name}")
+            continue
+
+        if col_name == "hmo_indicators":
+            monthly_cols = []
+            found_explicit_array = False
+
+            for candidate in source_expr:
+                if "{m}" in candidate:
+                    for m in range(1, 13):
+                        m_str = f"{m:02d}"
+                        column_name = candidate.format(m=m_str).lower()
+                        if column_name in file_schema:
+                            monthly_cols.append(f"CAST({column_name} AS VARCHAR)")
+                        else:
+                            monthly_cols.append("NULL")
+                elif candidate.lower() in file_schema:
+                    # Treat known "array-like" varchar fields (e.g., '000000000000')
+                    found_explicit_array = True
+                    expr = f"list_transform(range(12), i -> CAST(substr({candidate}, i + 1, 1) AS VARCHAR))"
+                    columns.append(f"{expr} AS {col_name}")
+                    break
+
+            if not found_explicit_array:
+                if monthly_cols:
+                    array_expr = f"array_value({', '.join(monthly_cols)})"
+                    columns.append(f"{array_expr} AS {col_name}")
+                else:
+                    print(f"'{col_name}' - No valid columns found for array construction. NULL inserted.")
+                    columns.append(f"NULL AS {col_name}")
+            continue
+
+        # --- Default logic ---
+        is_sql_expr = any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"])
+        detected_type = file_schema.get(selected_source.lower()) if not is_sql_expr else None
+        col_type = detected_type or str(col_def.get("type", "")).upper()
+        cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
+
+        if is_sql_expr:
+            expr = selected_source
+        else:
+            expr = cast_template.format(column_name=selected_source)
+
+        columns.append(f"{expr} AS {col_name}")
+
+    columns_str = ", ".join(columns)
+    files_str = ", ".join([f"'{file}'" for file in parquet_files])
+
+    return f"""
+        CREATE OR REPLACE TABLE {table_config['name']} AS
+        SELECT {columns_str}
+        FROM read_parquet([{files_str}]);
+    """
+
 
 def process_tables(config, output_path, table_to_run=None, year_to_run=None):
     """
