@@ -30,7 +30,6 @@ def get_parquet_files(basepath, year, path_patterns):
 def construct_query(table_config, parquet_files):
     columns = []
 
-    # Extract both column names and their DuckDB-inferred types
     query = f"DESCRIBE SELECT * FROM read_parquet('{parquet_files[0]}') LIMIT 0"
     schema_df = duckdb.query(query).to_df()
     file_schema = {row['column_name'].lower(): row['column_type'].upper() for _, row in schema_df.iterrows()}
@@ -49,6 +48,7 @@ def construct_query(table_config, parquet_files):
         source_expr = col_def.get("source")
         selected_source = None
 
+        # If it's a list of source candidates, pick the first one that exists in schema
         if isinstance(source_expr, list):
             for candidate in source_expr:
                 if "{m}" not in candidate and candidate.lower() in file_schema:
@@ -60,51 +60,58 @@ def construct_query(table_config, parquet_files):
             elif source_expr.lower() in file_schema:
                 selected_source = source_expr
 
-        if not selected_source and not any("{m}" in s for s in source_expr if isinstance(source_expr, list)):
+        # ---- Auto-detect array from {m}-style monthly source ----
+        if isinstance(source_expr, list) and any("{m}" in s for s in source_expr):
+            monthly_cols = []
+            array_like_source = None
+            found_monthly_data = False
+
+            for m in range(1, 13):
+                m_str = f"{m:02d}"
+                col_found = False
+
+                for candidate in source_expr:
+                    if "{m}" in candidate:
+                        col_candidate = candidate.format(m=m_str).lower()
+                        if col_candidate in file_schema:
+                            monthly_cols.append(f"CAST({col_candidate} AS VARCHAR)")
+                            found_monthly_data = True
+                            col_found = True
+                            break
+                if not col_found:
+                    monthly_cols.append("NULL")
+
+            if found_monthly_data:
+                array_expr = f"array_value({', '.join(monthly_cols)})"
+                columns.append(f"{array_expr} AS {col_name}")
+                continue
+            else:
+                # fallback to array-like VARCHAR string
+                for candidate in source_expr:
+                    if "{m}" not in candidate and candidate.lower() in file_schema:
+                        array_like_source = candidate
+                        break
+                if array_like_source:
+                    expr = f"list_transform(range(12), i -> CAST(substr({array_like_source}, i + 1, 1) AS VARCHAR))"
+                    columns.append(f"{expr} AS {col_name}")
+                else:
+                    print(f"'{col_name}' - No valid monthly or array-like source found. NULL inserted.")
+                    columns.append(f"NULL AS {col_name}")
+            continue
+
+        # ---- Fallback if no valid source ----
+        if not selected_source:
             print(f"'{col_name}' - No valid source found in schema. Creating column with NULL.")
             columns.append(f"NULL AS {col_name}")
             continue
 
-        if col_name == "hmo_indicators":
-            monthly_cols = []
-            found_explicit_array = False
-
-            for candidate in source_expr:
-                if "{m}" in candidate:
-                    for m in range(1, 13):
-                        m_str = f"{m:02d}"
-                        column_name = candidate.format(m=m_str).lower()
-                        if column_name in file_schema:
-                            monthly_cols.append(f"CAST({column_name} AS VARCHAR)")
-                        else:
-                            monthly_cols.append("NULL")
-                elif candidate.lower() in file_schema:
-                    # Treat known "array-like" varchar fields (e.g., '000000000000')
-                    found_explicit_array = True
-                    expr = f"list_transform(range(12), i -> CAST(substr({candidate}, i + 1, 1) AS VARCHAR))"
-                    columns.append(f"{expr} AS {col_name}")
-                    break
-
-            if not found_explicit_array:
-                if monthly_cols:
-                    array_expr = f"array_value({', '.join(monthly_cols)})"
-                    columns.append(f"{array_expr} AS {col_name}")
-                else:
-                    print(f"'{col_name}' - No valid columns found for array construction. NULL inserted.")
-                    columns.append(f"NULL AS {col_name}")
-            continue
-
-        # --- Default logic ---
+        # ---- Default expression logic ----
         is_sql_expr = any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"])
         detected_type = file_schema.get(selected_source.lower()) if not is_sql_expr else None
         col_type = detected_type or str(col_def.get("type", "")).upper()
         cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
 
-        if is_sql_expr:
-            expr = selected_source
-        else:
-            expr = cast_template.format(column_name=selected_source)
-
+        expr = selected_source if is_sql_expr else cast_template.format(column_name=selected_source)
         columns.append(f"{expr} AS {col_name}")
 
     columns_str = ", ".join(columns)
@@ -115,95 +122,6 @@ def construct_query(table_config, parquet_files):
         SELECT {columns_str}
         FROM read_parquet([{files_str}]);
     """
-def construct_query(table_config, parquet_files):
-    columns = []
-
-    # Extract both column names and their DuckDB-inferred types
-    query = f"DESCRIBE SELECT * FROM read_parquet('{parquet_files[0]}') LIMIT 0"
-    schema_df = duckdb.query(query).to_df()
-    file_schema = {row['column_name'].lower(): row['column_type'].upper() for _, row in schema_df.iterrows()}
-
-    for col in table_config.get("columns", []):
-        col_name = list(col.keys())[0]
-        col_def = col[col_name]
-
-        if not col_def:
-            print(f"Warning: column definition for '{col_name}' is None. Skipping.")
-            continue
-
-        cast_dict = col_def.get("cast", {})
-        cast_dict = {k.upper(): v for k, v in cast_dict.items()}
-
-        source_expr = col_def.get("source")
-        selected_source = None
-
-        if isinstance(source_expr, list):
-            for candidate in source_expr:
-                if "{m}" not in candidate and candidate.lower() in file_schema:
-                    selected_source = candidate
-                    break
-        elif isinstance(source_expr, str):
-            if any(tok in source_expr.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"]):
-                selected_source = source_expr
-            elif source_expr.lower() in file_schema:
-                selected_source = source_expr
-
-        if not selected_source and not any("{m}" in s for s in source_expr if isinstance(source_expr, list)):
-            print(f"'{col_name}' - No valid source found in schema. Creating column with NULL.")
-            columns.append(f"NULL AS {col_name}")
-            continue
-
-        if col_name == "hmo_indicators":
-            monthly_cols = []
-            found_explicit_array = False
-
-            for candidate in source_expr:
-                if "{m}" in candidate:
-                    for m in range(1, 13):
-                        m_str = f"{m:02d}"
-                        column_name = candidate.format(m=m_str).lower()
-                        if column_name in file_schema:
-                            monthly_cols.append(f"CAST({column_name} AS VARCHAR)")
-                        else:
-                            monthly_cols.append("NULL")
-                elif candidate.lower() in file_schema:
-                    # Treat known "array-like" varchar fields (e.g., '000000000000')
-                    found_explicit_array = True
-                    expr = f"list_transform(range(12), i -> CAST(substr({candidate}, i + 1, 1) AS VARCHAR))"
-                    columns.append(f"{expr} AS {col_name}")
-                    break
-
-            if not found_explicit_array:
-                if monthly_cols:
-                    array_expr = f"array_value({', '.join(monthly_cols)})"
-                    columns.append(f"{array_expr} AS {col_name}")
-                else:
-                    print(f"'{col_name}' - No valid columns found for array construction. NULL inserted.")
-                    columns.append(f"NULL AS {col_name}")
-            continue
-
-        # --- Default logic ---
-        is_sql_expr = any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"])
-        detected_type = file_schema.get(selected_source.lower()) if not is_sql_expr else None
-        col_type = detected_type or str(col_def.get("type", "")).upper()
-        cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
-
-        if is_sql_expr:
-            expr = selected_source
-        else:
-            expr = cast_template.format(column_name=selected_source)
-
-        columns.append(f"{expr} AS {col_name}")
-
-    columns_str = ", ".join(columns)
-    files_str = ", ".join([f"'{file}'" for file in parquet_files])
-
-    return f"""
-        CREATE OR REPLACE TABLE {table_config['name']} AS
-        SELECT {columns_str}
-        FROM read_parquet([{files_str}]);
-    """
-
 
 def process_tables(config, output_path, table_to_run=None, year_to_run=None):
     """
