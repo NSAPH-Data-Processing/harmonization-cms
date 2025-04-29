@@ -452,3 +452,102 @@ tables:
             cast:
               '*': "TRY_CAST({column_name} AS VARCHAR)"
 
+    # Expenditure variables
+      - los_day_cnt:
+          reference: "https://resdac.org/cms-data/variables/days-beneficiarys-stay-hospitalsnf"
+          description: The count in days of the total length of a beneficiary's stay in a hospital
+          type: INT
+          cast:
+            '*': "TRY_CAST({column_name} AS INT)"
+          source:
+            - los_day_cnt
+            - loscnt
+            - medpar_los_day_cnt
+
+      - drg_price_amt:
+          reference: "https://resdac.org/cms-data/variables/drg-price-amount"
+          description: The amount (called the 'DRG price' for purposes of MEDPAR analysis) that would have been paid if no deductibles, coinsurance, primary payers, or outliers were involved (rounded to whole dollars).
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - drg_price_amt
+            - drgprice
+            - medpar_drg_price_amt
+
+      - drg_outlier_pmt_amt:
+          reference: "https://resdac.org/cms-data/variables/drg-outlier-approved-payment-amount"
+          description: The amount of additional payment (rounded to whole dollars) approved due to an outlier situation over the DRG allowance for the stay.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - drg_outlier_pmt_amt
+            - outlramt
+            - medpar_drg_outlier_pmt_amt
+
+      - pass_thru_amt:
+          reference: "https://resdac.org/cms-data/variables/pass-thru-diem-amount-stay"
+          description: The total of all claim pass through per diem amounts (rounded to whole dollars) for the stay.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - pass_thru_amt
+            - passthru
+            - medpar_pass_thru_amt
+
+      - mdcr_pmt_amt:
+          reference: "https://resdac.org/cms-data/variables/total-medicare-payment-amount"
+          description: Amount of payment made from the Medicare trust fund for the services covered by the claim record. For hospital services, this amount does not include the claim pass-through per diem payments made by Medicare.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - mdcr_pmt_amt
+            - pmt_amt
+            - medpar_mdcr_pmt_amt
+
+      - bene_blood_ddctbl_amt:
+          reference: "https://resdac.org/cms-data/variables/beneficiarys-liability-blood-deductible-stay"
+          description: The amount of money (rounded to whole dollars) identified as the beneficiary's liability for the blood deductible for the stay.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - bene_blood_ddctbl_amt
+            - blddedam
+            - medpar_bene_blood_ddctbl_amt
+
+      - bene_prmry_pyr_amt:
+          reference: "https://resdac.org/cms-data/variables/primary-payer-paid-amount"
+          description: The amount of payment (rounded to whole dollars) made on behalf of the beneficiary by a primary payer other than Medicare, which has been applied to the covered Medicare charges for the stay.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - bene_prmry_pyr_amt
+            - prpayamt
+            - medpar_bene_prmry_pyr_amt
+
+      - bene_ip_ddctbl_amt:
+          reference: "https://resdac.org/cms-data/variables/beneficiarys-liability-deductible-stay"
+          description: The amount of money (rounded to whole dollars) identified as the beneficiary's liability for the inpatient deductible for the stay.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - bene_ip_ddctbl_amt
+            - ded_amt
+            - medpar_bene_ip_ddctbl_amt
+
+      - bene_pta_coinsrnc_amt:
+          reference: "https://resdac.org/cms-data/variables/beneficiarys-liability-part-coinsurance-stay"
+          description: The amount of money (rounded to whole dollars) identified as the beneficiary's liability for part A coinsurance for the stay.
+          type: NUMERIC
+          cast:
+            '*': "TRY_CAST({column_name} AS DOUBLE)"
+          source:
+            - bene_pta_coinsrnc_amt
+            - coin_amt
+            - medpar_bene_pta_coinsrnc_amt
