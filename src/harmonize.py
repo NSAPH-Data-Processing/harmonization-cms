@@ -45,10 +45,36 @@ def construct_query(table_config, parquet_files):
         cast_dict = col_def.get("cast", {})
         cast_dict = {k.upper(): v for k, v in cast_dict.items()}
 
+        # Check for pattern like diag[{m}=1:25]
+        match = re.match(r"(\w+)\[\{m\}=(\d+):(\d+)\]", col_name)
+        if match:
+            base_col_name, m_start, m_end = match.group(1), int(match.group(2)), int(match.group(3))
+            source_expr = col_def.get("source", [])
+            if isinstance(source_expr, str):
+                source_expr = [source_expr]
+            for m in range(m_start, m_end + 1):
+                m_str_raw = str(m)  # no leading zero
+                selected_source = None
+                for s in source_expr:
+                    candidate = s.format(m=m_str_raw).lower()
+                    if candidate in file_schema:
+                        selected_source = candidate
+                        break
+
+                output_col_name = f"{base_col_name}_{m:02d}"
+                if selected_source:
+                    col_type = file_schema.get(selected_source.lower(), col_def.get("type", "").upper())
+                    cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
+                    expr = cast_template.format(column_name=selected_source)
+                    columns.append(f"{expr} AS {output_col_name}")
+                else:
+                    print(f"'{output_col_name}' - No valid source found for m={m}. NULL inserted.")
+                    columns.append(f"NULL AS {output_col_name}")
+            continue  # move to next top-level column
+
         source_expr = col_def.get("source")
         selected_source = None
 
-        # If it's a list of source candidates, pick the first one that exists in schema
         if isinstance(source_expr, list):
             for candidate in source_expr:
                 if "{m}" not in candidate and candidate.lower() in file_schema:
@@ -60,7 +86,6 @@ def construct_query(table_config, parquet_files):
             elif source_expr.lower() in file_schema:
                 selected_source = source_expr
 
-        # ---- Auto-detect array from {m}-style monthly source ----
         if isinstance(source_expr, list) and any("{m}" in s for s in source_expr):
             monthly_cols = []
             array_like_source = None
@@ -69,7 +94,6 @@ def construct_query(table_config, parquet_files):
             for m in range(1, 13):
                 m_str = f"{m:02d}"
                 col_found = False
-
                 for candidate in source_expr:
                     if "{m}" in candidate:
                         col_candidate = candidate.format(m=m_str).lower()
@@ -86,7 +110,6 @@ def construct_query(table_config, parquet_files):
                 columns.append(f"{array_expr} AS {col_name}")
                 continue
             else:
-                # fallback to array-like VARCHAR string
                 for candidate in source_expr:
                     if "{m}" not in candidate and candidate.lower() in file_schema:
                         array_like_source = candidate
@@ -99,13 +122,11 @@ def construct_query(table_config, parquet_files):
                     columns.append(f"NULL AS {col_name}")
             continue
 
-        # ---- Fallback if no valid source ----
         if not selected_source:
             print(f"'{col_name}' - No valid source found in schema. Creating column with NULL.")
             columns.append(f"NULL AS {col_name}")
             continue
 
-        # ---- Default expression logic ----
         is_sql_expr = any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"])
         detected_type = file_schema.get(selected_source.lower()) if not is_sql_expr else None
         col_type = detected_type or str(col_def.get("type", "")).upper()
@@ -202,3 +223,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

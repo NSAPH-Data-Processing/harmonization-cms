@@ -159,15 +159,15 @@ tables:
           - rfrnc_yr # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
           - enrolyr # 1999, 2000, 2001, 2002
           - enroll_yr # 2009, 2010
-          - bene_enrollment_ref_yr # 2007, 2008
+          - bene_enrollmt_ref_yr # 2007, 2008
           cast:
             '*': >
               CASE 
-                WHEN {column_name}::INT < 20 THEN (2000 + {column_name}::INT) 
-                WHEN (20 < {column_name}::INT AND {column_name}::INT < 100) THEN (1900 + {column_name}::INT) 
-                WHEN {column_name} IS NULL THEN NULL 
-                ELSE {column_name}::INT 
+                WHEN TRY_CAST({column_name} AS INT) < 20 THEN 2000 + TRY_CAST({column_name} AS INT)
+                WHEN TRY_CAST({column_name} AS INT) >= 20 AND TRY_CAST({column_name} AS INT) < 100 THEN 1900 + TRY_CAST({column_name} AS INT)
+                ELSE TRY_CAST({column_name} AS INT)
               END
+
       - zip:
           source: 
           - bene_zip # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014
@@ -177,7 +177,7 @@ tables:
           - zip_cd # 2015, 2016, 2017, 2018
           type: INT
           cast:
-            '*': "{column_name}::INT"
+            '*': "TRY_CAST({column_name} AS INT)"
       - state:
           source: 
           - state_cd # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
@@ -323,3 +323,132 @@ tables:
             - bene_entlmt_rsn_curr # 2007, 2008
           cast:
             '*': "{column_name}::INT"
+  ip:
+    description: inpatient admissions view. taking multiple inpatient admissions files (MedPar) into a single view, transforming columns to same type.
+    path_pattern: 
+      - "{basepath}/{year}/medpar*/part-*.parquet"
+      - "{basepath}/{year}/mp*/part-*.parquet"
+    columns:
+      - bene_id:
+          source: 
+            - bene_id # 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - intbid # 1999-2002
+            - bid_5333_1 # 2003-2005
+            - bid_5333_3 # 2006
+          type: VARCHAR
+          cast:
+            '*': "TRY_CAST({column_name} AS VARCHAR)"
+      - year:
+          source: 
+            - medpar_yr_num # 2011-2018
+          type: INT
+          cast:
+            '*': "TRY_CAST({column_name} AS INT)"
+      - state:
+          source: 
+            - bene_rsdnc_ssa_state_cd # 2007-2010
+            - medpar_bene_rsdnc_ssa_state_cd # 1999-2002
+            - state_cd # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+          type: INT
+          cast:
+            '*': "TRY_CAST({column_name} AS INT)"
+      - zip:
+          source: 
+            - bene_zip # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+            - bene_mlg_cntct_zip_cd # 2007 - 2010
+            - medpar_bene_mlg_cntct_zip_cd # 1999 - 2002
+          type: INT
+          cast:
+            '*': "TRY_CAST({column_name} AS INT)"
+      - admission_date:
+          type: DATE
+          source:
+            - medpar_admsn_dt # 1999-2002
+            - admsn_dt # 2007 - 2010
+            - admsndt # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+          cast:
+            VARCHAR: >
+              CASE 
+                WHEN {column_name} ~ '^[0-9]{8}$' AND {column_name} NOT IN ('00000000') 
+                THEN STRPTIME({column_name}, '%Y%m%d') 
+                ELSE NULL 
+              END
+            DOUBLE: >
+              CASE
+                WHEN {column_name} IS NOT NULL
+                    AND CAST({column_name} AS BIGINT) BETWEEN 1900001 AND 2099366
+                THEN STRPTIME(CAST(CAST({column_name} AS BIGINT) AS VARCHAR), '%Y%j')
+                ELSE NULL
+              END
+      - discharge_date:
+          type: DATE
+          source:
+            - medpar_dschrg_dt # 1999-2002
+            - dschrg_dt # 2007 - 2010
+            - dschrgdt # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+          cast:
+            VARCHAR: >
+              CASE 
+                WHEN {column_name} ~ '^[0-9]{8}$' AND {column_name} NOT IN ('00000000') 
+                THEN STRPTIME({column_name}, '%Y%m%d') 
+                ELSE NULL 
+              END
+            DOUBLE: >
+              CASE
+                WHEN {column_name} IS NOT NULL
+                    AND CAST({column_name} AS BIGINT) BETWEEN 1900001 AND 2099366
+                THEN STRPTIME(CAST(CAST({column_name} AS BIGINT) AS VARCHAR), '%Y%j')
+                ELSE NULL
+              END
+      - adm_day_of_week:
+            type: INT
+            source:
+              - medpar_admsn_day_cd
+              - admsn_day_cd
+              - admsnday
+            cast: 
+              "*" : "CAST({column_name} AS INT)"
+      - admsn_type_cd:
+            type: CHAR(1)
+            cast:
+              "*": "CAST({column_name} AS VARCHAR)"
+            source:
+              - ip_admsn_type_cd
+              - type_adm
+              - medpar_ip_admsn_type_cd
+      - src_admsn_cd:
+            type: CHAR(1)
+            source:
+              - src_ip_admsn_cd
+              - src_adms
+              - medpar_src_ip_admsn_cd
+            cast:
+              "*": "CAST({column_name} AS VARCHAR)"
+      - dschrg_dstntn_cd:
+            type: CHAR(2)
+            source:
+              - dschrg_dstntn_cd
+              - dstntncd
+              - medpar_dschrg_dstntn_cd
+            cast:
+                numeric: "TRIM(CAST({column_name} AS VARCHAR))"
+                '*': "TRY_CAST({column_name} AS VARCHAR)"
+      - dschrgcd:
+            type: CHAR(1)
+            source:
+              - dschrgcd
+              - bene_dschrg_stus_cd
+              - medpar_bene_dschrg_stus_cd
+            cast:
+                '*': "TRY_CAST({column_name} AS VARCHAR)"
+      - diag[{m}=1:25]:
+            type: VARCHAR
+            source:
+              - medpar_dgns_cd_{m}
+              - dgns_cd0{m}
+              - dgns_cd{m}
+              - dgns_{m}_cd
+              - dgnscd{m}
+            cast:
+              '*': "TRY_CAST({column_name} AS VARCHAR)"
+
