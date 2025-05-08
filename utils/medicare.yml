@@ -361,25 +361,15 @@ tables:
           cast:
             '*': "TRY_CAST({column_name} AS INT)"
       - admission_date:
-          type: DATE
+          type: date
+          description: Date of admission
+          cast:
+            VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN STRPTIME({column_name}, '%Y%m%d') WHEN {column_name} ~ '^[0-9]{{7}}$' AND CAST(SUBSTR({column_name}, 5, 3) AS INTEGER) BETWEEN 1 AND 366 THEN STRPTIME({column_name}, '%Y%j') ELSE NULL END"
+            DOUBLE: "CASE WHEN {column_name} IS NOT NULL AND CAST({column_name} AS BIGINT) BETWEEN 1900001 AND 2099366 THEN STRPTIME(CAST(CAST({column_name} AS BIGINT) AS VARCHAR), '%Y%j') ELSE NULL END"
           source:
             - medpar_admsn_dt # 1999-2002
-            - admsn_dt # 2007 - 2010
-            - admsndt # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
-          cast:
-            VARCHAR: >
-              CASE 
-                WHEN {column_name} ~ '^[0-9]{8}$' AND {column_name} NOT IN ('00000000') 
-                THEN STRPTIME({column_name}, '%Y%m%d') 
-                ELSE NULL 
-              END
-            DOUBLE: >
-              CASE
-                WHEN {column_name} IS NOT NULL
-                    AND CAST({column_name} AS BIGINT) BETWEEN 1900001 AND 2099366
-                THEN STRPTIME(CAST(CAST({column_name} AS BIGINT) AS VARCHAR), '%Y%j')
-                ELSE NULL
-              END
+            - admsn_dt # 2007-2010
+            - admsndt # 2003-2006, 2011-2018
       - discharge_date:
           type: DATE
           source:
@@ -387,25 +377,14 @@ tables:
             - dschrg_dt # 2007 - 2010
             - dschrgdt # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
           cast:
-            VARCHAR: >
-              CASE 
-                WHEN {column_name} ~ '^[0-9]{8}$' AND {column_name} NOT IN ('00000000') 
-                THEN STRPTIME({column_name}, '%Y%m%d') 
-                ELSE NULL 
-              END
-            DOUBLE: >
-              CASE
-                WHEN {column_name} IS NOT NULL
-                    AND CAST({column_name} AS BIGINT) BETWEEN 1900001 AND 2099366
-                THEN STRPTIME(CAST(CAST({column_name} AS BIGINT) AS VARCHAR), '%Y%j')
-                ELSE NULL
-              END
+            VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN STRPTIME({column_name}, '%Y%m%d') WHEN {column_name} ~ '^[0-9]{{7}}$' AND CAST(SUBSTR({column_name}, 5, 3) AS INTEGER) BETWEEN 1 AND 366 THEN STRPTIME({column_name}, '%Y%j') ELSE NULL END"
+            DOUBLE: "CASE WHEN {column_name} IS NOT NULL AND CAST({column_name} AS BIGINT) BETWEEN 1900001 AND 2099366 THEN STRPTIME(CAST(CAST({column_name} AS BIGINT) AS VARCHAR), '%Y%j') ELSE NULL END"
       - adm_day_of_week:
             type: INT
             source:
-              - medpar_admsn_day_cd
-              - admsn_day_cd
-              - admsnday
+              - medpar_admsn_day_cd # 1999-2002
+              - admsn_day_cd # 2007-2010
+              - admsnday # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
             cast: 
               "*" : "CAST({column_name} AS INT)"
       - admsn_type_cd:
@@ -413,32 +392,32 @@ tables:
             cast:
               "*": "CAST({column_name} AS VARCHAR)"
             source:
-              - ip_admsn_type_cd
-              - type_adm
-              - medpar_ip_admsn_type_cd
+              - ip_admsn_type_cd # 2007-2010
+              - type_adm # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+              - medpar_ip_admsn_type_cd # 1999 - 2002
       - src_admsn_cd:
             type: CHAR(1)
             source:
-              - src_ip_admsn_cd
-              - src_adms
-              - medpar_src_ip_admsn_cd
+              - src_ip_admsn_cd # 2007 - 2010
+              - src_adms # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+              - medpar_src_ip_admsn_cd # 1999 - 2002
             cast:
               "*": "CAST({column_name} AS VARCHAR)"
       - dschrg_dstntn_cd:
             type: CHAR(2)
             source:
-              - dschrg_dstntn_cd
-              - dstntncd
-              - medpar_dschrg_dstntn_cd
+              - dschrg_dstntn_cd # 2007 - 2010
+              - dstntncd # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+              - medpar_dschrg_dstntn_cd # 1999 - 2002
             cast:
                 numeric: "TRIM(CAST({column_name} AS VARCHAR))"
                 '*': "TRY_CAST({column_name} AS VARCHAR)"
       - dschrgcd:
             type: CHAR(1)
             source:
-              - dschrgcd
-              - bene_dschrg_stus_cd
-              - medpar_bene_dschrg_stus_cd
+              - dschrgcd # 2003, 2004, 2005, 2006, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018
+              - bene_dschrg_stus_cd # 2007 - 2010
+              - medpar_bene_dschrg_stus_cd # 1999 - 2002
             cast:
                 '*': "TRY_CAST({column_name} AS VARCHAR)"
       - diag[{m}=1:25]:

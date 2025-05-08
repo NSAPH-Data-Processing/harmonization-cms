@@ -6,6 +6,7 @@ import os
 import re
 import pandas as pd
 
+#TODO: handle cases when multiple parts for raw file. We want to concatenate them
 # build input parquet path based upon pattern and basepath in yaml
 def get_parquet_files(basepath, year, path_patterns):
     """
@@ -30,6 +31,7 @@ def get_parquet_files(basepath, year, path_patterns):
 def construct_query(table_config, parquet_files):
     columns = []
 
+    # Get the schema of the first Parquet file
     query = f"DESCRIBE SELECT * FROM read_parquet('{parquet_files[0]}') LIMIT 0"
     schema_df = duckdb.query(query).to_df()
     file_schema = {row['column_name'].lower(): row['column_type'].upper() for _, row in schema_df.iterrows()}
@@ -45,94 +47,50 @@ def construct_query(table_config, parquet_files):
         cast_dict = col_def.get("cast", {})
         cast_dict = {k.upper(): v for k, v in cast_dict.items()}
 
-        # Check for pattern like diag[{m}=1:25]
-        match = re.match(r"(\w+)\[\{m\}=(\d+):(\d+)\]", col_name)
-        if match:
-            base_col_name, m_start, m_end = match.group(1), int(match.group(2)), int(match.group(3))
-            source_expr = col_def.get("source", [])
-            if isinstance(source_expr, str):
-                source_expr = [source_expr]
-            for m in range(m_start, m_end + 1):
-                m_str_raw = str(m)  # no leading zero
-                selected_source = None
-                for s in source_expr:
-                    candidate = s.format(m=m_str_raw).lower()
-                    if candidate in file_schema:
-                        selected_source = candidate
-                        break
-
-                output_col_name = f"{base_col_name}_{m:02d}"
-                if selected_source:
-                    col_type = file_schema.get(selected_source.lower(), col_def.get("type", "").upper())
-                    cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
-                    expr = cast_template.format(column_name=selected_source)
-                    columns.append(f"{expr} AS {output_col_name}")
-                else:
-                    print(f"'{output_col_name}' - No valid source found for m={m}. NULL inserted.")
-                    columns.append(f"NULL AS {output_col_name}")
-            continue  # move to next top-level column
-
         source_expr = col_def.get("source")
         selected_source = None
 
+        # Handle dynamic columns like diag[{m}=1:25]
+        if "{m}" in col_name:
+            base_name, range_part = col_name.split("[{m}=")
+            range_start, range_end = map(int, range_part.rstrip("]").split(":"))
+            for m in range(range_start, range_end + 1):
+                dynamic_col_name = f"{base_name}{m}"
+                dynamic_sources = [src.replace("{m}", str(m)) for src in source_expr]
+                selected_source = None
+
+                for candidate in dynamic_sources:
+                    if candidate.lower() in file_schema:
+                        selected_source = candidate
+                        break
+
+                if selected_source:
+                    cast_template = cast_dict.get("*", "{column_name}")
+                    expr = cast_template.format(column_name=selected_source)
+                    columns.append(f"{expr} AS {dynamic_col_name}")
+                else:
+                    print(f"'{dynamic_col_name}' - No valid source found in schema. Creating column with NULL.")
+                    columns.append(f"NULL AS {dynamic_col_name}")
+            continue
+
+        # Handle regular columns
         if isinstance(source_expr, list):
             for candidate in source_expr:
-                if "{m}" not in candidate and candidate.lower() in file_schema:
+                if candidate.lower() in file_schema:
                     selected_source = candidate
                     break
         elif isinstance(source_expr, str):
-            if any(tok in source_expr.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"]):
+            if source_expr.lower() in file_schema:
                 selected_source = source_expr
-            elif source_expr.lower() in file_schema:
-                selected_source = source_expr
-
-        if isinstance(source_expr, list) and any("{m}" in s for s in source_expr):
-            monthly_cols = []
-            array_like_source = None
-            found_monthly_data = False
-
-            for m in range(1, 13):
-                m_str = f"{m:02d}"
-                col_found = False
-                for candidate in source_expr:
-                    if "{m}" in candidate:
-                        col_candidate = candidate.format(m=m_str).lower()
-                        if col_candidate in file_schema:
-                            monthly_cols.append(f"CAST({col_candidate} AS VARCHAR)")
-                            found_monthly_data = True
-                            col_found = True
-                            break
-                if not col_found:
-                    monthly_cols.append("NULL")
-
-            if found_monthly_data:
-                array_expr = f"array_value({', '.join(monthly_cols)})"
-                columns.append(f"{array_expr} AS {col_name}")
-                continue
-            else:
-                for candidate in source_expr:
-                    if "{m}" not in candidate and candidate.lower() in file_schema:
-                        array_like_source = candidate
-                        break
-                if array_like_source:
-                    expr = f"list_transform(range(12), i -> CAST(substr({array_like_source}, i + 1, 1) AS VARCHAR))"
-                    columns.append(f"{expr} AS {col_name}")
-                else:
-                    print(f"'{col_name}' - No valid monthly or array-like source found. NULL inserted.")
-                    columns.append(f"NULL AS {col_name}")
-            continue
 
         if not selected_source:
             print(f"'{col_name}' - No valid source found in schema. Creating column with NULL.")
             columns.append(f"NULL AS {col_name}")
             continue
 
-        is_sql_expr = any(tok in selected_source.upper() for tok in ['(', ')', 'CASE', 'SELECT', '"', "'"])
-        detected_type = file_schema.get(selected_source.lower()) if not is_sql_expr else None
-        col_type = detected_type or str(col_def.get("type", "")).upper()
+        col_type = file_schema.get(selected_source.lower(), col_def.get("type", "").upper())
         cast_template = cast_dict.get(col_type) or cast_dict.get("*") or "{column_name}"
-
-        expr = selected_source if is_sql_expr else cast_template.format(column_name=selected_source)
+        expr = cast_template.format(column_name=selected_source)
         columns.append(f"{expr} AS {col_name}")
 
     columns_str = ", ".join(columns)
@@ -152,7 +110,7 @@ def process_tables(config, output_path, table_to_run=None, year_to_run=None):
     conn = duckdb.connect(database=':memory:')
     os.makedirs(output_path, exist_ok=True)
 
-    years = [int(year_to_run)]
+    years = [year_to_run]
 
     for table_name, table_config in config['tables'].items():
         if table_to_run is not None and table_name != table_to_run:
