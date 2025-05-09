@@ -36,21 +36,7 @@ Clone the repository and create a conda environment.
    ```
 
 ## Usage
-Step 1: Prepare Your Data
-- Add symlinks to input, and output folders inside the corresponding /data subfolders.
-
-For example:
-
-```bash
-export HOME_DIR=$(pwd)
-
-cd $HOME_DIR/data/input/ .
-ln -s <input_path> .
-
-cd $HOME_DIR/data/output/
-ln -s <output_path> .
-```
-Step 2: edit the .sbatch script to select the years you want to cover, and the tables you want to create. Make sure to edit the sbatch array value (It should be = # of tables * # of years)
+edit the .sbatch script to select the years you want to cover, and the tables you want to create. Make sure to edit the sbatch array value (It should be = # of tables * # of years)
 
 ```bash
 python sbatch harmonize.sbatch
