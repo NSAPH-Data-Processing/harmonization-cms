@@ -72,6 +72,59 @@ def construct_query(table_config, parquet_files):
                     print(f"'{dynamic_col_name}' - No valid source found in schema. Creating column with NULL.")
                     columns.append(f"NULL AS {dynamic_col_name}")
             continue
+        # elif isinstance(source_expr, list) and any("{m}" in src for src in source_expr):
+        #     # Handle cases where source_expr contains dynamic columns like hmoind{m}
+        #     dynamic_columns = []
+        #     for src in source_expr:
+        #         if "{m}" in src:
+        #             base_name, range_part = col_name.split("[{m}=")
+        #             range_start, range_end = map(int, range_part.rstrip("]").split(":"))
+        #             for m in range(range_start, range_end + 1):
+        #                 dynamic_source = src.replace("{m}", str(m))
+        #                 if dynamic_source.lower() in file_schema:
+        #                     dynamic_columns.append(dynamic_source)
+        #             else:
+        #                 dynamic_source = src.replace("{m}", str(m))
+        #                 print(f"'{dynamic_source}' - No valid source found in schema. Adding NULL.")
+        #                 dynamic_columns.append("NULL")
+        #         elif src.lower() in file_schema:
+        #             # Handle cases where the source is already in array format
+        #             dynamic_columns.append(src)
+            
+        #     if dynamic_columns:
+        #         cast_template = cast_dict.get("*", "{columns}")
+        #         expr = cast_template.format(columns=", ".join(dynamic_columns))
+        #         columns.append(f"{expr} AS {col_name}")
+        #     else:
+        #         print(f"'{col_name}' - No valid sources found for dynamic array. Creating column with NULL.")
+        #         columns.append(f"NULL AS {col_name}")
+        #     continue
+        
+        elif isinstance(source_expr, list) and any("{m}" in src for src in source_expr):
+            dynamic_columns = []
+
+            for src in source_expr:
+                if "{m}" in src:
+
+                    # Fetch month values from the YAML config, falling back to a default if not defined
+                    month_values = col_def.get("m", [str(i).zfill(2) for i in range(1, 13)])
+
+                    dynamic_columns.extend(
+                        src.replace("{m}", str(m)) if src.replace("{m}", str(m)).lower() in file_schema else "NULL"
+                        for m in month_values
+                    )
+                elif src.lower() in file_schema:
+                    dynamic_columns.append(src)
+
+            # Remove redundant NULLs if any valid columns exist
+            valid_columns = [col for col in dynamic_columns if col != "NULL"]
+            columns.append(
+                f"{cast_dict.get('*', '{columns}').format(columns=', '.join(valid_columns))} AS {col_name}" 
+                if valid_columns 
+                else f"NULL AS {col_name}"
+            )
+            continue
+
 
         # Handle regular columns
         if isinstance(source_expr, list):
