@@ -36,13 +36,14 @@ Clone the repository and create a conda environment.
    ```
 
 ## Usage
-edit the .sbatch script to select the years you want to cover, and the tables you want to create. Make sure to edit the sbatch array value (It should be = # of tables * # of years)
+Step 1:
+- Edit the .sbatch script to select the years you want to cover, and the tables you want to create. Make sure to edit the sbatch array value (It should be = # of tables * # of years)
 
 ```bash
 python sbatch harmonize.sbatch
 ```
 Be mindful that each HPC clusters has a different configuration and the .sbatch files might need to be modified accordingly.
 
-Step 4: Review the Output
+Step 2: Review the Output
 - The output of the processing script will be saved in the output/ directory. Across all years, parquet files generated (for each table type - mbsf_d, ps, ip) should contain the same variables, of the same data type, and same data structure/coding.
 
