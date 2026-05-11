@@ -1,0 +1,7 @@
+name: medicare_red
+dirs:
+  input: null
+  output:
+    mbsf_d: null
+    ps: null
+    ip: null
