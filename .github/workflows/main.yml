@@ -1,0 +1,168 @@
+name: Amazon Inspector Scan and Sync to CodeCommit
+
+on:
+  workflow_call:
+    secrets:
+      ROLE_ARN:
+        required: true
+      REGION:
+        required: true
+      REPO_NAME:
+        required: true
+
+  push:
+    branches: [main]
+  pull_request:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Avoid overlapping runs on the same ref
+concurrency:
+  group: inspector-and-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+# Default permissions for all jobs
+permissions:
+  contents: read          # needed to checkout repo
+  id-token: write         # needed for OIDC to AWS
+  security-events: write  # optional, for SARIF / security events if used
+
+jobs:
+  # Job 1: Amazon Inspector Security Scan
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # 1. Check out your repository
+      - name: Checkout this repository
+        uses: actions/checkout@v6
+
+      # 2. Secure AWS Authentication using OIDC
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          role-session-name: InspectorScan_${{ github.run_id }}
+          aws-region: ${{ secrets.REGION }}
+
+      # 3. Amazon Inspector Vulnerability Scan (Code/Repository)
+      - name: Amazon Inspector Code/Repository Scan
+        id: inspector_code
+        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@v1.5.0
+        with:
+          # change artifact_type to either 'repository', 'container', 'binary', or 'archive'.
+          artifact_type: 'repository'
+
+          # change artifact_path to the file path or container image you would like to scan.
+          # File paths should be relative to your root project directory.
+          # For containers, this action accepts 'docker pull'-style references to containers,
+          # such as 'alpine:latest' or a file path to an image exported as TAR using docker save.
+          artifact_path: './'
+
+          # If enabled, this setting will display Inspector's vulnerability scan findings
+          # as a GitHub actions step summary.
+          display_vulnerability_findings: "enabled"
+
+          # CRITICAL: Only count and show vulnerabilities with a fix available
+          show_only_fixable_vulns: "true"
+
+          # Download and use the latest version of the Software Bill of Materials (SBOM) generator (sbomgen) when scanning.
+          sbomgen_version: "latest"
+
+          # Set vulnerability thresholds; if the number of vulnerabilities is
+          # equal to or greater than any of the specified thresholds, this
+          # action will set the 'vulnerability_threshold_exceeded'
+          # output flag to 1.
+          # Set severity thresholds to 0 to ignore all vulnerabilities of that level.
+          critical_threshold: 1
+          high_threshold: 1
+          medium_threshold: 1
+          low_threshold: 0
+          other_threshold: 0
+
+          # ignored_findings: (optional) Comma-separated list of CVE IDs to ignore. Ignored CVEs are excluded from reports and threshold counts. Example: CVE-2021-12345,CVE-2022-67890"
+          # ignore_findings: "CVE-2019-20477"
+
+          # Additional input arguments are available to control scan behavior.
+          # See 'action.yml' for additional input/output options.
+
+      # 3b. Debug: Print all outputs from scan step
+      # vulnerability_threshold_exceeded: (0 = success, 1 = thresholds exceeded)
+      - name: Debug scan outputs
+        if: always()
+        run: |
+          echo "=== Inspector Code/Repository Outputs ==="
+          echo "outcome: ${{ steps.inspector_code.outcome }}"
+          echo "vulnerability_threshold_exceeded: ${{ steps.inspector_code.outputs.vulnerability_threshold_exceeded }}"
+
+      # 4. Display Inspector Code Scan results
+      - name: Display Inspector Code Scan Results (Markdown)
+        if: always()
+        run: cat ${{ steps.inspector_code.outputs.inspector_scan_results_markdown }}
+
+      # 5. Fail the job if vulnerability threshold flag is set
+      #    (0 = success, 1 = thresholds exceeded)
+      - name: Fail job if vulnerability threshold is exceeded (Code)
+        if: always()
+        run: exit ${{ steps.inspector_code.outputs.vulnerability_threshold_exceeded }}
+
+      # 6. Upload Security Code Scan Artifacts (always, even on failure)
+      - name: Upload Security Code Scan Artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Security-Code-Scan-Artifacts-${{ github.run_id }}
+          path: |
+            ${{ steps.inspector_code.outputs.inspector_scan_results }}
+            ${{ steps.inspector_code.outputs.inspector_scan_results_markdown }}
+            ${{ steps.inspector_code.outputs.artifact_sbom }}
+
+     # 7. Defense-in-Depth: IaC Security Scan (Checkov)
+      - name: IaC Security Scan (Checkov)
+        if: always()
+        uses: docker://bridgecrew/checkov:latest
+        with:
+          args: -d . --quiet
+        continue-on-error: true # Allow non-critical tools to not block the pipeline
+
+  # Job 2: Sync to CodeCommit (only runs if scan passes)
+  sync:
+    needs: scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Least-privilege permissions only for this job
+    permissions:
+      contents: write    # needed for pushing to CodeCommit
+      id-token: write    # needed for OIDC to AWS
+
+    steps:
+      # 1. Check out your repository
+      - name: Checkout this repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # 2. Create local branches from remote (required for sync action to work properly)
+      - name: Create local branches for sync
+        run: |
+          git branch -r | grep -v '\->' | while read remote; do
+            git branch --track "${remote#origin/}" "$remote" 2>/dev/null || true
+          done
+
+      # 3. Secure AWS Authentication using OIDC
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          role-session-name: SyncToCodeCommit_${{ github.run_id }}
+          aws-region: ${{ secrets.REGION }}
+
+      # 4. Sync to CodeCommit
+      - name: Sync up to CodeCommit
+        uses: tsgit18/sync-up-to-codecommit-action@v1.0.6
+        with:
+          repository_name: ${{ secrets.REPO_NAME }}
+          aws_region: ${{ secrets.REGION }}
