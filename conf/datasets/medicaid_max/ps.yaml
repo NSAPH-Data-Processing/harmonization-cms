@@ -1,0 +1,2437 @@
+table_name: ps
+description: Medicaid MAX file patient summary harmonization rules
+
+path_pattern:
+  - "{basepath}/{year}/maxdata_*_ps/part-*.parquet"
+
+columns:
+- bene_id:
+    source:
+      - BENE_ID
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- msis_id:
+    source:
+      - MSIS_ID
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- state:
+    source:
+      - STATE_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- state_case_num:
+    source:
+      - EL_STATE_CASE_NUM
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- year:
+    source:
+      - MAX_YR_DT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hgt_flag:
+    source:
+      - HGT_FLAG
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ext_ssn_srce:
+    source:
+      - EXT_SSN_SRCE
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- dob:
+    source:
+      - EL_DOB
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- age_grp_cd:
+    source:
+      - EL_AGE_GRP_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- sex:
+    source:
+      - EL_SEX_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_ethncy_cd:
+    source:
+      - EL_RACE_ETHNCY_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_1:
+    source:
+      - RACE_CODE_1
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_2:
+    source:
+      - RACE_CODE_2
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_3:
+    source:
+      - RACE_CODE_3
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_4:
+    source:
+      - RACE_CODE_4
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_5:
+    source:
+      - RACE_CODE_5
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ethnicity_code:
+    source:
+      - ETHNICITY_CODE
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_race_ethncy_cd:
+    source:
+      - MDCR_RACE_ETHNCY_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_lang_cd:
+    source:
+      - MDCR_LANG_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- sex_race_cd:
+    source:
+      - EL_SEX_RACE_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- dod:
+    source:
+      - EL_DOD
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- mdcr_dod:
+    source:
+      - MDCR_DOD
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- mdcr_death_day_sw:
+    source:
+      - MDCR_DEATH_DAY_SW
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- county:
+    source:
+      - EL_RSDNC_CNTY_CD_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- zip:
+    source:
+      - EL_RSDNC_ZIP_CD_LTST
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ss_elgblty_cd_ltst:
+    source:
+      - EL_SS_ELGBLTY_CD_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- max_elgblty_cd_ltst:
+    source:
+      - EL_MAX_ELGBLTY_CD_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- msng_elg_data:
+    source:
+      - MSNG_ELG_DATA
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- elgblty_mo_cnt:
+    source:
+      - EL_ELGBLTY_MO_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prvt_insrnc_mo_cnt:
+    source:
+      - EL_PRVT_INSRNC_MO_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_ann_xovr_old:
+    source:
+      - EL_MDCR_ANN_XOVR_OLD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_qtr_xovr_old_1:
+    source:
+      - EL_MDCR_QTR_XOVR_OLD_1
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_qtr_xovr_old_2:
+    source:
+      - EL_MDCR_QTR_XOVR_OLD_2
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_qtr_xovr_old_3:
+    source:
+      - EL_MDCR_QTR_XOVR_OLD_3
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_qtr_xovr_old_4:
+    source:
+      - EL_MDCR_QTR_XOVR_OLD_4
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_dual_ann:
+    source:
+      - EL_MDCR_DUAL_ANN
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_qtr_xovr_99_1:
+    source:
+      - EL_MDCR_QTR_XOVR_99_1
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_qtr_xovr_99_2:
+    source:
+      - EL_MDCR_QTR_XOVR_99_2
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_qtr_xovr_99_3:
+    source:
+      - EL_MDCR_QTR_XOVR_99_3
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_qtr_xovr_99_4:
+    source:
+      - EL_MDCR_QTR_XOVR_99_4
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_ben_mo_cnt:
+    source:
+      - EL_MDCR_BEN_MO_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_orig_reas_cd:
+    source:
+      - MDCR_ORIG_REAS_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_dual_mo:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Monthly Medicare dual eligibility code (12 elements)"
+    source_component_sets:
+      - [EL_MDCR_DUAL_MO_1, EL_MDCR_DUAL_MO_2, EL_MDCR_DUAL_MO_3, EL_MDCR_DUAL_MO_4, EL_MDCR_DUAL_MO_5, EL_MDCR_DUAL_MO_6, EL_MDCR_DUAL_MO_7, EL_MDCR_DUAL_MO_8, EL_MDCR_DUAL_MO_9, EL_MDCR_DUAL_MO_10, EL_MDCR_DUAL_MO_11, EL_MDCR_DUAL_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- ss_elg_cd_mo:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Monthly SSI/SS eligibility code (12 elements)"
+    source_component_sets:
+      - [SS_ELG_CD_MO_1, SS_ELG_CD_MO_2, SS_ELG_CD_MO_3, SS_ELG_CD_MO_4, SS_ELG_CD_MO_5, SS_ELG_CD_MO_6, SS_ELG_CD_MO_7, SS_ELG_CD_MO_8, SS_ELG_CD_MO_9, SS_ELG_CD_MO_10, SS_ELG_CD_MO_11, SS_ELG_CD_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_elg_cd_mo:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Monthly MAX eligibility code (12 elements)"
+    source_component_sets:
+      - [MAX_ELG_CD_MO_1, MAX_ELG_CD_MO_2, MAX_ELG_CD_MO_3, MAX_ELG_CD_MO_4, MAX_ELG_CD_MO_5, MAX_ELG_CD_MO_6, MAX_ELG_CD_MO_7, MAX_ELG_CD_MO_8, MAX_ELG_CD_MO_9, MAX_ELG_CD_MO_10, MAX_ELG_CD_MO_11, MAX_ELG_CD_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- pvt_ins_cd:
+    kind: array
+    type: "DOUBLE[]"
+    description: "Monthly private insurance code (12 elements)"
+    source_component_sets:
+      - [EL_PVT_INS_CD_1, EL_PVT_INS_CD_2, EL_PVT_INS_CD_3, EL_PVT_INS_CD_4, EL_PVT_INS_CD_5, EL_PVT_INS_CD_6, EL_PVT_INS_CD_7, EL_PVT_INS_CD_8, EL_PVT_INS_CD_9, EL_PVT_INS_CD_10, EL_PVT_INS_CD_11, EL_PVT_INS_CD_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- mdcr_ben_mo:
+    kind: array
+    type: "DOUBLE[]"
+    description: "Monthly Medicare benefit indicator/count (12 elements)"
+    source_component_sets:
+      - [EL_MDCR_BEN_MO_1, EL_MDCR_BEN_MO_2, EL_MDCR_BEN_MO_3, EL_MDCR_BEN_MO_4, EL_MDCR_BEN_MO_5, EL_MDCR_BEN_MO_6, EL_MDCR_BEN_MO_7, EL_MDCR_BEN_MO_8, EL_MDCR_BEN_MO_9, EL_MDCR_BEN_MO_10, EL_MDCR_BEN_MO_11, EL_MDCR_BEN_MO_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- mc_combo_mo:
+    kind: array
+    type: "DOUBLE[]"
+    description: "Monthly managed care combo indicator (12 elements)"
+    source_component_sets:
+      - [MC_COMBO_MO_1, MC_COMBO_MO_2, MC_COMBO_MO_3, MC_COMBO_MO_4, MC_COMBO_MO_5, MC_COMBO_MO_6, MC_COMBO_MO_7, MC_COMBO_MO_8, MC_COMBO_MO_9, MC_COMBO_MO_10, MC_COMBO_MO_11, MC_COMBO_MO_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- days_el_cnt:
+    kind: array
+    type: "DOUBLE[]"
+    description: "Days eligible count per month (12 elements)"
+    source_component_sets:
+      - [EL_DAYS_EL_CNT_1, EL_DAYS_EL_CNT_2, EL_DAYS_EL_CNT_3, EL_DAYS_EL_CNT_4, EL_DAYS_EL_CNT_5, EL_DAYS_EL_CNT_6, EL_DAYS_EL_CNT_7, EL_DAYS_EL_CNT_8, EL_DAYS_EL_CNT_9, EL_DAYS_EL_CNT_10, EL_DAYS_EL_CNT_11, EL_DAYS_EL_CNT_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- tanf_cash_flg:
+    kind: array
+    type: "DOUBLE[]"
+    description: "TANF cash flag per month (12 elements)"
+    source_component_sets:
+      - [EL_TANF_CASH_FLG_1, EL_TANF_CASH_FLG_2, EL_TANF_CASH_FLG_3, EL_TANF_CASH_FLG_4, EL_TANF_CASH_FLG_5, EL_TANF_CASH_FLG_6, EL_TANF_CASH_FLG_7, EL_TANF_CASH_FLG_8, EL_TANF_CASH_FLG_9, EL_TANF_CASH_FLG_10, EL_TANF_CASH_FLG_11, EL_TANF_CASH_FLG_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- rstrct_bnft_flg:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Restricted benefit flag per month (12 elements)"
+    source_component_sets:
+      - [EL_RSTRCT_BNFT_FLG_1, EL_RSTRCT_BNFT_FLG_2, EL_RSTRCT_BNFT_FLG_3, EL_RSTRCT_BNFT_FLG_4, EL_RSTRCT_BNFT_FLG_5, EL_RSTRCT_BNFT_FLG_6, EL_RSTRCT_BNFT_FLG_7, EL_RSTRCT_BNFT_FLG_8, EL_RSTRCT_BNFT_FLG_9, EL_RSTRCT_BNFT_FLG_10, EL_RSTRCT_BNFT_FLG_11, EL_RSTRCT_BNFT_FLG_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- chip_flag:
+    kind: array
+    type: "DOUBLE[]"
+    description: "CHIP flag per month (12 elements)"
+    source_component_sets:
+      - [EL_CHIP_FLAG_1, EL_CHIP_FLAG_2, EL_CHIP_FLAG_3, EL_CHIP_FLAG_4, EL_CHIP_FLAG_5, EL_CHIP_FLAG_6, EL_CHIP_FLAG_7, EL_CHIP_FLAG_8, EL_CHIP_FLAG_9, EL_CHIP_FLAG_10, EL_CHIP_FLAG_11, EL_CHIP_FLAG_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- php_type_1:
+    kind: array
+    type: "DOUBLE[]"
+    description: "PHP plan type for slot 1 across 12 months"
+    source_component_sets:
+      - [EL_PHP_TYPE_1_1, EL_PHP_TYPE_1_2, EL_PHP_TYPE_1_3, EL_PHP_TYPE_1_4, EL_PHP_TYPE_1_5, EL_PHP_TYPE_1_6, EL_PHP_TYPE_1_7, EL_PHP_TYPE_1_8, EL_PHP_TYPE_1_9, EL_PHP_TYPE_1_10, EL_PHP_TYPE_1_11, EL_PHP_TYPE_1_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- php_id_1:
+    kind: array
+    type: "VARCHAR[]"
+    description: "PHP plan ID for slot 1 across 12 months"
+    source_component_sets:
+      - [EL_PHP_ID_1_1, EL_PHP_ID_1_2, EL_PHP_ID_1_3, EL_PHP_ID_1_4, EL_PHP_ID_1_5, EL_PHP_ID_1_6, EL_PHP_ID_1_7, EL_PHP_ID_1_8, EL_PHP_ID_1_9, EL_PHP_ID_1_10, EL_PHP_ID_1_11, EL_PHP_ID_1_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- php_type_2:
+    kind: array
+    type: "DOUBLE[]"
+    description: "PHP plan type for slot 2 across 12 months"
+    source_component_sets:
+      - [EL_PHP_TYPE_2_1, EL_PHP_TYPE_2_2, EL_PHP_TYPE_2_3, EL_PHP_TYPE_2_4, EL_PHP_TYPE_2_5, EL_PHP_TYPE_2_6, EL_PHP_TYPE_2_7, EL_PHP_TYPE_2_8, EL_PHP_TYPE_2_9, EL_PHP_TYPE_2_10, EL_PHP_TYPE_2_11, EL_PHP_TYPE_2_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- php_id_2:
+    kind: array
+    type: "VARCHAR[]"
+    description: "PHP plan ID for slot 2 across 12 months"
+    source_component_sets:
+      - [EL_PHP_ID_2_1, EL_PHP_ID_2_2, EL_PHP_ID_2_3, EL_PHP_ID_2_4, EL_PHP_ID_2_5, EL_PHP_ID_2_6, EL_PHP_ID_2_7, EL_PHP_ID_2_8, EL_PHP_ID_2_9, EL_PHP_ID_2_10, EL_PHP_ID_2_11, EL_PHP_ID_2_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- php_type_3:
+    kind: array
+    type: "DOUBLE[]"
+    description: "PHP plan type for slot 3 across 12 months"
+    source_component_sets:
+      - [EL_PHP_TYPE_3_1, EL_PHP_TYPE_3_2, EL_PHP_TYPE_3_3, EL_PHP_TYPE_3_4, EL_PHP_TYPE_3_5, EL_PHP_TYPE_3_6, EL_PHP_TYPE_3_7, EL_PHP_TYPE_3_8, EL_PHP_TYPE_3_9, EL_PHP_TYPE_3_10, EL_PHP_TYPE_3_11, EL_PHP_TYPE_3_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- php_id_3:
+    kind: array
+    type: "VARCHAR[]"
+    description: "PHP plan ID for slot 3 across 12 months"
+    source_component_sets:
+      - [EL_PHP_ID_3_1, EL_PHP_ID_3_2, EL_PHP_ID_3_3, EL_PHP_ID_3_4, EL_PHP_ID_3_5, EL_PHP_ID_3_6, EL_PHP_ID_3_7, EL_PHP_ID_3_8, EL_PHP_ID_3_9, EL_PHP_ID_3_10, EL_PHP_ID_3_11, EL_PHP_ID_3_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- php_type_4:
+    kind: array
+    type: "DOUBLE[]"
+    description: "PHP plan type for slot 4 across 12 months"
+    source_component_sets:
+      - [EL_PHP_TYPE_4_1, EL_PHP_TYPE_4_2, EL_PHP_TYPE_4_3, EL_PHP_TYPE_4_4, EL_PHP_TYPE_4_5, EL_PHP_TYPE_4_6, EL_PHP_TYPE_4_7, EL_PHP_TYPE_4_8, EL_PHP_TYPE_4_9, EL_PHP_TYPE_4_10, EL_PHP_TYPE_4_11, EL_PHP_TYPE_4_12]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- php_id_4:
+    kind: array
+    type: "VARCHAR[]"
+    description: "PHP plan ID for slot 4 across 12 months"
+    source_component_sets:
+      - [EL_PHP_ID_4_1, EL_PHP_ID_4_2, EL_PHP_ID_4_3, EL_PHP_ID_4_4, EL_PHP_ID_4_5, EL_PHP_ID_4_6, EL_PHP_ID_4_7, EL_PHP_ID_4_8, EL_PHP_ID_4_9, EL_PHP_ID_4_10, EL_PHP_ID_4_11, EL_PHP_ID_4_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_waiver_type_1:
+    kind: array
+    type: "VARCHAR[]"
+    description: "MAX waiver type slot 1 across 12 months"
+    source_component_sets:
+      - [MAX_WAIVER_TYPE_1_MO_1, MAX_WAIVER_TYPE_1_MO_2, MAX_WAIVER_TYPE_1_MO_3, MAX_WAIVER_TYPE_1_MO_4, MAX_WAIVER_TYPE_1_MO_5, MAX_WAIVER_TYPE_1_MO_6, MAX_WAIVER_TYPE_1_MO_7, MAX_WAIVER_TYPE_1_MO_8, MAX_WAIVER_TYPE_1_MO_9, MAX_WAIVER_TYPE_1_MO_10, MAX_WAIVER_TYPE_1_MO_11, MAX_WAIVER_TYPE_1_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_waiver_id_1:
+    kind: array
+    type: "VARCHAR[]"
+    description: "MAX waiver ID slot 1 across 12 months"
+    source_component_sets:
+      - [MAX_WAIVER_ID_1_MO_1, MAX_WAIVER_ID_1_MO_2, MAX_WAIVER_ID_1_MO_3, MAX_WAIVER_ID_1_MO_4, MAX_WAIVER_ID_1_MO_5, MAX_WAIVER_ID_1_MO_6, MAX_WAIVER_ID_1_MO_7, MAX_WAIVER_ID_1_MO_8, MAX_WAIVER_ID_1_MO_9, MAX_WAIVER_ID_1_MO_10, MAX_WAIVER_ID_1_MO_11, MAX_WAIVER_ID_1_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_waiver_type_2:
+    kind: array
+    type: "VARCHAR[]"
+    description: "MAX waiver type slot 2 across 12 months"
+    source_component_sets:
+      - [MAX_WAIVER_TYPE_2_MO_1, MAX_WAIVER_TYPE_2_MO_2, MAX_WAIVER_TYPE_2_MO_3, MAX_WAIVER_TYPE_2_MO_4, MAX_WAIVER_TYPE_2_MO_5, MAX_WAIVER_TYPE_2_MO_6, MAX_WAIVER_TYPE_2_MO_7, MAX_WAIVER_TYPE_2_MO_8, MAX_WAIVER_TYPE_2_MO_9, MAX_WAIVER_TYPE_2_MO_10, MAX_WAIVER_TYPE_2_MO_11, MAX_WAIVER_TYPE_2_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_waiver_id_2:
+    kind: array
+    type: "VARCHAR[]"
+    description: "MAX waiver ID slot 2 across 12 months"
+    source_component_sets:
+      - [MAX_WAIVER_ID_2_MO_1, MAX_WAIVER_ID_2_MO_2, MAX_WAIVER_ID_2_MO_3, MAX_WAIVER_ID_2_MO_4, MAX_WAIVER_ID_2_MO_5, MAX_WAIVER_ID_2_MO_6, MAX_WAIVER_ID_2_MO_7, MAX_WAIVER_ID_2_MO_8, MAX_WAIVER_ID_2_MO_9, MAX_WAIVER_ID_2_MO_10, MAX_WAIVER_ID_2_MO_11, MAX_WAIVER_ID_2_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_waiver_type_3:
+    kind: array
+    type: "VARCHAR[]"
+    description: "MAX waiver type slot 3 across 12 months"
+    source_component_sets:
+      - [MAX_WAIVER_TYPE_3_MO_1, MAX_WAIVER_TYPE_3_MO_2, MAX_WAIVER_TYPE_3_MO_3, MAX_WAIVER_TYPE_3_MO_4, MAX_WAIVER_TYPE_3_MO_5, MAX_WAIVER_TYPE_3_MO_6, MAX_WAIVER_TYPE_3_MO_7, MAX_WAIVER_TYPE_3_MO_8, MAX_WAIVER_TYPE_3_MO_9, MAX_WAIVER_TYPE_3_MO_10, MAX_WAIVER_TYPE_3_MO_11, MAX_WAIVER_TYPE_3_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_waiver_id_3:
+    kind: array
+    type: "VARCHAR[]"
+    description: "MAX waiver ID slot 3 across 12 months"
+    source_component_sets:
+      - [MAX_WAIVER_ID_3_MO_1, MAX_WAIVER_ID_3_MO_2, MAX_WAIVER_ID_3_MO_3, MAX_WAIVER_ID_3_MO_4, MAX_WAIVER_ID_3_MO_5, MAX_WAIVER_ID_3_MO_6, MAX_WAIVER_ID_3_MO_7, MAX_WAIVER_ID_3_MO_8, MAX_WAIVER_ID_3_MO_9, MAX_WAIVER_ID_3_MO_10, MAX_WAIVER_ID_3_MO_11, MAX_WAIVER_ID_3_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- mdcr_xovr:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Monthly Medicare crossover indicator (12 elements)"
+    source_component_sets:
+      - [EL_MDCR_XOVR_MO_1, EL_MDCR_XOVR_MO_2, EL_MDCR_XOVR_MO_3, EL_MDCR_XOVR_MO_4, EL_MDCR_XOVR_MO_5, EL_MDCR_XOVR_MO_6, EL_MDCR_XOVR_MO_7, EL_MDCR_XOVR_MO_8, EL_MDCR_XOVR_MO_9, EL_MDCR_XOVR_MO_10, EL_MDCR_XOVR_MO_11, EL_MDCR_XOVR_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- tmsis_elg_grp:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Monthly T-MSIS eligibility group (12 elements)"
+    source_component_sets:
+      - [TMSIS_ELG_GRP_MO_1, TMSIS_ELG_GRP_MO_2, TMSIS_ELG_GRP_MO_3, TMSIS_ELG_GRP_MO_4, TMSIS_ELG_GRP_MO_5, TMSIS_ELG_GRP_MO_6, TMSIS_ELG_GRP_MO_7, TMSIS_ELG_GRP_MO_8, TMSIS_ELG_GRP_MO_9, TMSIS_ELG_GRP_MO_10, TMSIS_ELG_GRP_MO_11, TMSIS_ELG_GRP_MO_12]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- max_1915c_waiver_type_ltst:
+    source:
+      - MAX_1915C_WAIVER_TYPE_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- rcpnt_ind:
+    source:
+      - RCPNT_IND
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- rcpnt_dlvry_cd:
+    source:
+      - RCPNT_DLVRY_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_hcbs:
+    source:
+      - ENCTR_REC_CNT_HCBS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ssa_dod:
+    source:
+      - SSA_DOD
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- mdcr_ann_xovr_99:
+    source:
+      - EL_MDCR_ANN_XOVR_99
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- tmsis_elg_grp_ltst:
+    source:
+      - TMSIS_ELG_GRP_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- prem_pymt_ind_hmo:
+    source:
+      - PREM_PYMT_IND_HMO
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_rec_cnt_hmo:
+    source:
+      - PREM_PYMT_REC_CNT_HMO
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_mdcd_pymt_amt_hmo:
+    source:
+      - PREM_MDCD_PYMT_AMT_HMO
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_ind_php:
+    source:
+      - PREM_PYMT_IND_PHP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_rec_cnt_php:
+    source:
+      - PREM_PYMT_REC_CNT_PHP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_mdcd_pymt_amt_php:
+    source:
+      - PREM_MDCD_PYMT_AMT_PHP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_ind_pccm:
+    source:
+      - PREM_PYMT_IND_PCCM
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_rec_cnt_pccm:
+    source:
+      - PREM_PYMT_REC_CNT_PCCM
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_mdcd_pymt_amt_pccm:
+    source:
+      - PREM_MDCD_PYMT_AMT_PCCM
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_ind_phi:
+    source:
+      - PREM_PYMT_IND_PHI
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_pymt_rec_cnt_phi:
+    source:
+      - PREM_PYMT_REC_CNT_PHI
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prem_mdcd_pymt_amt_phi:
+    source:
+      - PREM_MDCD_PYMT_AMT_PHI
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ip_dschrg_cnt:
+    source:
+      - TOT_IP_DSCHRG_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ip_stay_cnt:
+    source:
+      - TOT_IP_STAY_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ip_day_cnt_dschrg:
+    source:
+      - TOT_IP_DAY_CNT_DSCHRG
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ip_day_cnt_stays:
+    source:
+      - TOT_IP_DAY_CNT_STAYS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ip_cvr_day_cnt_dschrg:
+    source:
+      - TOT_IP_CVR_DAY_CNT_DSCHRG
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ip_cvr_day_cnt_stays:
+    source:
+      - TOT_IP_CVR_DAY_CNT_STAYS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ltc_cvr_day_cnt_aged:
+    source:
+      - TOT_LTC_CVR_DAY_CNT_AGED
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ltc_cvr_day_cnt_psych:
+    source:
+      - TOT_LTC_CVR_DAY_CNT_PSYCH
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ltc_cvr_day_cnt_icfmr:
+    source:
+      - TOT_LTC_CVR_DAY_CNT_ICFMR
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ltc_cvr_day_cnt_nf:
+    source:
+      - TOT_LTC_CVR_DAY_CNT_NF
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_ltc_cvr_day_cnt:
+    source:
+      - TOT_LTC_CVR_DAY_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_clm_cnt:
+    source:
+      - TOT_MDCD_CLM_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_ffs_clm_cnt:
+    source:
+      - TOT_MDCD_FFS_CLM_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_prem_clm_cnt:
+    source:
+      - TOT_MDCD_PREM_CLM_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_enct_clm_cnt:
+    source:
+      - TOT_MDCD_ENCT_CLM_CNT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_pymt_amt:
+    source:
+      - TOT_MDCD_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_ffs_pymt_amt:
+    source:
+      - TOT_MDCD_FFS_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_prem_pymt_amt:
+    source:
+      - TOT_MDCD_PREM_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_chrg_amt:
+    source:
+      - TOT_MDCD_CHRG_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_mdcd_tp_pymt_amt:
+    source:
+      - TOT_MDCD_TP_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_rec_fp:
+    source:
+      - IP_HOSP_REC_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_pymt_fp:
+    source:
+      - IP_HOSP_PYMT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_rec_cnt_fp:
+    source:
+      - LT_REC_CNT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_pymt_amt_fp:
+    source:
+      - LT_PYMT_AMT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_rec_cnt_fp:
+    source:
+      - OT_REC_CNT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_pymt_amt_fp:
+    source:
+      - OT_PYMT_AMT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_rec_cnt_fp:
+    source:
+      - RX_REC_CNT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_pymt_amt_fp:
+    source:
+      - RX_PYMT_AMT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_rec_cnt_fp:
+    source:
+      - TOT_REC_CNT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_pymt_amt_fp:
+    source:
+      - TOT_PYMT_AMT_FP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_rec_rhc:
+    source:
+      - IP_HOSP_REC_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_pymt_rhc:
+    source:
+      - IP_HOSP_PYMT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_rec_cnt_rhc:
+    source:
+      - LT_REC_CNT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_pymt_amt_rhc:
+    source:
+      - LT_PYMT_AMT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_rec_cnt_rhc:
+    source:
+      - OT_REC_CNT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_pymt_amt_rhc:
+    source:
+      - OT_PYMT_AMT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_rec_cnt_rhc:
+    source:
+      - RX_REC_CNT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_pymt_amt_rhc:
+    source:
+      - RX_PYMT_AMT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_rec_cnt_rhc:
+    source:
+      - TOT_REC_CNT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_pymt_amt_rhc:
+    source:
+      - TOT_PYMT_AMT_RHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_rec_fqhc:
+    source:
+      - IP_HOSP_REC_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_pymt_fqhc:
+    source:
+      - IP_HOSP_PYMT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_rec_cnt_fqhc:
+    source:
+      - LT_REC_CNT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_pymt_amt_fqhc:
+    source:
+      - LT_PYMT_AMT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_rec_cnt_fqhc:
+    source:
+      - OT_REC_CNT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_pymt_amt_fqhc:
+    source:
+      - OT_PYMT_AMT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_rec_cnt_fqhc:
+    source:
+      - RX_REC_CNT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_pymt_amt_fqhc:
+    source:
+      - RX_PYMT_AMT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_rec_cnt_fqhc:
+    source:
+      - TOT_REC_CNT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_pymt_amt_fqhc:
+    source:
+      - TOT_PYMT_AMT_FQHC
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_rec_ihs:
+    source:
+      - IP_HOSP_REC_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_pymt_ihs:
+    source:
+      - IP_HOSP_PYMT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_rec_cnt_ihs:
+    source:
+      - LT_REC_CNT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_pymt_amt_ihs:
+    source:
+      - LT_PYMT_AMT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_rec_cnt_ihs:
+    source:
+      - OT_REC_CNT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_pymt_amt_ihs:
+    source:
+      - OT_PYMT_AMT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_rec_cnt_ihs:
+    source:
+      - RX_REC_CNT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_pymt_amt_ihs:
+    source:
+      - RX_PYMT_AMT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_rec_cnt_ihs:
+    source:
+      - TOT_REC_CNT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_pymt_amt_ihs:
+    source:
+      - TOT_PYMT_AMT_IHS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_rec_hcbca:
+    source:
+      - IP_HOSP_REC_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_pymt_hcbca:
+    source:
+      - IP_HOSP_PYMT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_rec_cnt_hcbca:
+    source:
+      - LT_REC_CNT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_pymt_amt_hcbca:
+    source:
+      - LT_PYMT_AMT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_rec_cnt_hcbca:
+    source:
+      - OT_REC_CNT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_pymt_amt_hcbca:
+    source:
+      - OT_PYMT_AMT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_rec_cnt_hcbca:
+    source:
+      - RX_REC_CNT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_pymt_amt_hcbca:
+    source:
+      - RX_PYMT_AMT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_rec_cnt_hcbca:
+    source:
+      - TOT_REC_CNT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_pymt_amt_hcbca:
+    source:
+      - TOT_PYMT_AMT_HCBCA
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_rec_hcbcs:
+    source:
+      - IP_HOSP_REC_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ip_hosp_pymt_hcbcs:
+    source:
+      - IP_HOSP_PYMT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_rec_cnt_hcbcs:
+    source:
+      - LT_REC_CNT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- lt_pymt_amt_hcbcs:
+    source:
+      - LT_PYMT_AMT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_rec_cnt_hcbcs:
+    source:
+      - OT_REC_CNT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ot_pymt_amt_hcbcs:
+    source:
+      - OT_PYMT_AMT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_rec_cnt_hcbcs:
+    source:
+      - RX_REC_CNT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- rx_pymt_amt_hcbcs:
+    source:
+      - RX_PYMT_AMT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_rec_cnt_hcbcs:
+    source:
+      - TOT_REC_CNT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tot_pymt_amt_hcbcs:
+    source:
+      - TOT_PYMT_AMT_HCBCS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_01:
+    source:
+      - FEE_FOR_SRVC_IND_01
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_01:
+    source:
+      - FFS_CLM_CNT_01
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_01:
+    source:
+      - FFS_PYMT_AMT_01
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_01:
+    source:
+      - FFS_CHRG_AMT_01
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_01:
+    source:
+      - FFS_TP_AMT_01
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_01:
+    source:
+      - ENCTR_REC_CNT_01
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_02:
+    source:
+      - FEE_FOR_SRVC_IND_02
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_02:
+    source:
+      - FFS_CLM_CNT_02
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_02:
+    source:
+      - FFS_PYMT_AMT_02
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_02:
+    source:
+      - FFS_CHRG_AMT_02
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_02:
+    source:
+      - FFS_TP_AMT_02
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_02:
+    source:
+      - ENCTR_REC_CNT_02
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_04:
+    source:
+      - FEE_FOR_SRVC_IND_04
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_04:
+    source:
+      - FFS_CLM_CNT_04
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_04:
+    source:
+      - FFS_PYMT_AMT_04
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_04:
+    source:
+      - FFS_CHRG_AMT_04
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_04:
+    source:
+      - FFS_TP_AMT_04
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_04:
+    source:
+      - ENCTR_REC_CNT_04
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_05:
+    source:
+      - FEE_FOR_SRVC_IND_05
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_05:
+    source:
+      - FFS_CLM_CNT_05
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_05:
+    source:
+      - FFS_PYMT_AMT_05
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_05:
+    source:
+      - FFS_CHRG_AMT_05
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_05:
+    source:
+      - FFS_TP_AMT_05
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_05:
+    source:
+      - ENCTR_REC_CNT_05
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_07:
+    source:
+      - FEE_FOR_SRVC_IND_07
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_07:
+    source:
+      - FFS_CLM_CNT_07
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_07:
+    source:
+      - FFS_PYMT_AMT_07
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_07:
+    source:
+      - FFS_CHRG_AMT_07
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_07:
+    source:
+      - FFS_TP_AMT_07
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_07:
+    source:
+      - ENCTR_REC_CNT_07
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_08:
+    source:
+      - FEE_FOR_SRVC_IND_08
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_08:
+    source:
+      - FFS_CLM_CNT_08
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_08:
+    source:
+      - FFS_PYMT_AMT_08
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_08:
+    source:
+      - FFS_CHRG_AMT_08
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_08:
+    source:
+      - FFS_TP_AMT_08
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_08:
+    source:
+      - ENCTR_REC_CNT_08
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_09:
+    source:
+      - FEE_FOR_SRVC_IND_09
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_09:
+    source:
+      - FFS_CLM_CNT_09
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_09:
+    source:
+      - FFS_PYMT_AMT_09
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_09:
+    source:
+      - FFS_CHRG_AMT_09
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_09:
+    source:
+      - FFS_TP_AMT_09
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_09:
+    source:
+      - ENCTR_REC_CNT_09
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_10:
+    source:
+      - FEE_FOR_SRVC_IND_10
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_10:
+    source:
+      - FFS_CLM_CNT_10
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_10:
+    source:
+      - FFS_PYMT_AMT_10
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_10:
+    source:
+      - FFS_CHRG_AMT_10
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_10:
+    source:
+      - FFS_TP_AMT_10
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_10:
+    source:
+      - ENCTR_REC_CNT_10
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_11:
+    source:
+      - FEE_FOR_SRVC_IND_11
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_11:
+    source:
+      - FFS_CLM_CNT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_11:
+    source:
+      - FFS_PYMT_AMT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_11:
+    source:
+      - FFS_CHRG_AMT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_11:
+    source:
+      - FFS_TP_AMT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_11:
+    source:
+      - ENCTR_REC_CNT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_12:
+    source:
+      - FEE_FOR_SRVC_IND_12
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_12:
+    source:
+      - FFS_CLM_CNT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_12:
+    source:
+      - FFS_PYMT_AMT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_12:
+    source:
+      - FFS_CHRG_AMT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_12:
+    source:
+      - FFS_TP_AMT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_12:
+    source:
+      - ENCTR_REC_CNT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_13:
+    source:
+      - FEE_FOR_SRVC_IND_13
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_13:
+    source:
+      - FFS_CLM_CNT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_13:
+    source:
+      - FFS_PYMT_AMT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_13:
+    source:
+      - FFS_CHRG_AMT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_13:
+    source:
+      - FFS_TP_AMT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_13:
+    source:
+      - ENCTR_REC_CNT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_15:
+    source:
+      - FEE_FOR_SRVC_IND_15
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_15:
+    source:
+      - FFS_CLM_CNT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_15:
+    source:
+      - FFS_PYMT_AMT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_15:
+    source:
+      - FFS_CHRG_AMT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_15:
+    source:
+      - FFS_TP_AMT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_15:
+    source:
+      - ENCTR_REC_CNT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_16:
+    source:
+      - FEE_FOR_SRVC_IND_16
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_16:
+    source:
+      - FFS_CLM_CNT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_16:
+    source:
+      - FFS_PYMT_AMT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_16:
+    source:
+      - FFS_CHRG_AMT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_16:
+    source:
+      - FFS_TP_AMT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_16:
+    source:
+      - ENCTR_REC_CNT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_19:
+    source:
+      - FEE_FOR_SRVC_IND_19
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_19:
+    source:
+      - FFS_CLM_CNT_19
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_19:
+    source:
+      - FFS_PYMT_AMT_19
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_19:
+    source:
+      - FFS_CHRG_AMT_19
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_19:
+    source:
+      - FFS_TP_AMT_19
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_19:
+    source:
+      - ENCTR_REC_CNT_19
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_24:
+    source:
+      - FEE_FOR_SRVC_IND_24
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_24:
+    source:
+      - FFS_CLM_CNT_24
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_24:
+    source:
+      - FFS_PYMT_AMT_24
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_24:
+    source:
+      - FFS_CHRG_AMT_24
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_24:
+    source:
+      - FFS_TP_AMT_24
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_24:
+    source:
+      - ENCTR_REC_CNT_24
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_25:
+    source:
+      - FEE_FOR_SRVC_IND_25
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_25:
+    source:
+      - FFS_CLM_CNT_25
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_25:
+    source:
+      - FFS_PYMT_AMT_25
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_25:
+    source:
+      - FFS_CHRG_AMT_25
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_25:
+    source:
+      - FFS_TP_AMT_25
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_25:
+    source:
+      - ENCTR_REC_CNT_25
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_26:
+    source:
+      - FEE_FOR_SRVC_IND_26
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_26:
+    source:
+      - FFS_CLM_CNT_26
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_26:
+    source:
+      - FFS_PYMT_AMT_26
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_26:
+    source:
+      - FFS_CHRG_AMT_26
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_26:
+    source:
+      - FFS_TP_AMT_26
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_26:
+    source:
+      - ENCTR_REC_CNT_26
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_30:
+    source:
+      - FEE_FOR_SRVC_IND_30
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_30:
+    source:
+      - FFS_CLM_CNT_30
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_30:
+    source:
+      - FFS_PYMT_AMT_30
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_30:
+    source:
+      - FFS_CHRG_AMT_30
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_30:
+    source:
+      - FFS_TP_AMT_30
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_30:
+    source:
+      - ENCTR_REC_CNT_30
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_31:
+    source:
+      - FEE_FOR_SRVC_IND_31
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_31:
+    source:
+      - FFS_CLM_CNT_31
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_31:
+    source:
+      - FFS_PYMT_AMT_31
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_31:
+    source:
+      - FFS_CHRG_AMT_31
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_31:
+    source:
+      - FFS_TP_AMT_31
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_31:
+    source:
+      - ENCTR_REC_CNT_31
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_33:
+    source:
+      - FEE_FOR_SRVC_IND_33
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_33:
+    source:
+      - FFS_CLM_CNT_33
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_33:
+    source:
+      - FFS_PYMT_AMT_33
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_33:
+    source:
+      - FFS_CHRG_AMT_33
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_33:
+    source:
+      - FFS_TP_AMT_33
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_33:
+    source:
+      - ENCTR_REC_CNT_33
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_34:
+    source:
+      - FEE_FOR_SRVC_IND_34
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_34:
+    source:
+      - FFS_CLM_CNT_34
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_34:
+    source:
+      - FFS_PYMT_AMT_34
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_34:
+    source:
+      - FFS_CHRG_AMT_34
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_34:
+    source:
+      - FFS_TP_AMT_34
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_34:
+    source:
+      - ENCTR_REC_CNT_34
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_35:
+    source:
+      - FEE_FOR_SRVC_IND_35
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_35:
+    source:
+      - FFS_CLM_CNT_35
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_35:
+    source:
+      - FFS_PYMT_AMT_35
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_35:
+    source:
+      - FFS_CHRG_AMT_35
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_35:
+    source:
+      - FFS_TP_AMT_35
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_35:
+    source:
+      - ENCTR_REC_CNT_35
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_36:
+    source:
+      - FEE_FOR_SRVC_IND_36
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_36:
+    source:
+      - FFS_CLM_CNT_36
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_36:
+    source:
+      - FFS_PYMT_AMT_36
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_36:
+    source:
+      - FFS_CHRG_AMT_36
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_36:
+    source:
+      - FFS_TP_AMT_36
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_36:
+    source:
+      - ENCTR_REC_CNT_36
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_37:
+    source:
+      - FEE_FOR_SRVC_IND_37
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_37:
+    source:
+      - FFS_CLM_CNT_37
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_37:
+    source:
+      - FFS_PYMT_AMT_37
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_37:
+    source:
+      - FFS_CHRG_AMT_37
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_37:
+    source:
+      - FFS_TP_AMT_37
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_37:
+    source:
+      - ENCTR_REC_CNT_37
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_38:
+    source:
+      - FEE_FOR_SRVC_IND_38
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_38:
+    source:
+      - FFS_CLM_CNT_38
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_38:
+    source:
+      - FFS_PYMT_AMT_38
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_38:
+    source:
+      - FFS_CHRG_AMT_38
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_38:
+    source:
+      - FFS_TP_AMT_38
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_38:
+    source:
+      - ENCTR_REC_CNT_38
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_39:
+    source:
+      - FEE_FOR_SRVC_IND_39
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_39:
+    source:
+      - FFS_CLM_CNT_39
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_39:
+    source:
+      - FFS_PYMT_AMT_39
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_39:
+    source:
+      - FFS_CHRG_AMT_39
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_39:
+    source:
+      - FFS_TP_AMT_39
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_39:
+    source:
+      - ENCTR_REC_CNT_39
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_51:
+    source:
+      - FEE_FOR_SRVC_IND_51
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_51:
+    source:
+      - FFS_CLM_CNT_51
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_51:
+    source:
+      - FFS_PYMT_AMT_51
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_51:
+    source:
+      - FFS_CHRG_AMT_51
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_51:
+    source:
+      - FFS_TP_AMT_51
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_51:
+    source:
+      - ENCTR_REC_CNT_51
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_52:
+    source:
+      - FEE_FOR_SRVC_IND_52
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_52:
+    source:
+      - FFS_CLM_CNT_52
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_52:
+    source:
+      - FFS_PYMT_AMT_52
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_52:
+    source:
+      - FFS_CHRG_AMT_52
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_52:
+    source:
+      - FFS_TP_AMT_52
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_52:
+    source:
+      - ENCTR_REC_CNT_52
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_53:
+    source:
+      - FEE_FOR_SRVC_IND_53
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_53:
+    source:
+      - FFS_CLM_CNT_53
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_53:
+    source:
+      - FFS_PYMT_AMT_53
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_53:
+    source:
+      - FFS_CHRG_AMT_53
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_53:
+    source:
+      - FFS_TP_AMT_53
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_53:
+    source:
+      - ENCTR_REC_CNT_53
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_54:
+    source:
+      - FEE_FOR_SRVC_IND_54
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_54:
+    source:
+      - FFS_CLM_CNT_54
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_54:
+    source:
+      - FFS_PYMT_AMT_54
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_54:
+    source:
+      - FFS_CHRG_AMT_54
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_54:
+    source:
+      - FFS_TP_AMT_54
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_54:
+    source:
+      - ENCTR_REC_CNT_54
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- fee_for_srvc_ind_99:
+    source:
+      - FEE_FOR_SRVC_IND_99
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ffs_clm_cnt_99:
+    source:
+      - FFS_CLM_CNT_99
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_pymt_amt_99:
+    source:
+      - FFS_PYMT_AMT_99
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_chrg_amt_99:
+    source:
+      - FFS_CHRG_AMT_99
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- ffs_tp_amt_99:
+    source:
+      - FFS_TP_AMT_99
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- enctr_rec_cnt_99:
+    source:
+      - ENCTR_REC_CNT_99
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_11:
+    source:
+      - CLTC_FFS_PYMT_AMT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_12:
+    source:
+      - CLTC_FFS_PYMT_AMT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_13:
+    source:
+      - CLTC_FFS_PYMT_AMT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_14:
+    source:
+      - CLTC_FFS_PYMT_AMT_14
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_15:
+    source:
+      - CLTC_FFS_PYMT_AMT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_16:
+    source:
+      - CLTC_FFS_PYMT_AMT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_17:
+    source:
+      - CLTC_FFS_PYMT_AMT_17
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_18:
+    source:
+      - CLTC_FFS_PYMT_AMT_18
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_19:
+    source:
+      - CLTC_FFS_PYMT_AMT_19
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_20:
+    source:
+      - CLTC_FFS_PYMT_AMT_20
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_30:
+    source:
+      - CLTC_FFS_PYMT_AMT_30
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_31:
+    source:
+      - CLTC_FFS_PYMT_AMT_31
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_32:
+    source:
+      - CLTC_FFS_PYMT_AMT_32
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_33:
+    source:
+      - CLTC_FFS_PYMT_AMT_33
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_34:
+    source:
+      - CLTC_FFS_PYMT_AMT_34
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_35:
+    source:
+      - CLTC_FFS_PYMT_AMT_35
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_36:
+    source:
+      - CLTC_FFS_PYMT_AMT_36
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_37:
+    source:
+      - CLTC_FFS_PYMT_AMT_37
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_38:
+    source:
+      - CLTC_FFS_PYMT_AMT_38
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_39:
+    source:
+      - CLTC_FFS_PYMT_AMT_39
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- cltc_ffs_pymt_amt_40:
+    source:
+      - CLTC_FFS_PYMT_AMT_40
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_01:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_01
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_02:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_02
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_03:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_03
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_04:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_04
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_05:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_05
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_06:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_06
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_07:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_07
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_08:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_08
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_09:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_09
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_10:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_10
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_11:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_11
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_12:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_12
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_13:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_13
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_14:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_14
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_15:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_15
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_16:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_16
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_17:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_17
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- hcbs_txnmy_mdcd_pymt_amt_18:
+    source:
+      - HCBS_TXNMY_MDCD_PYMT_AMT_18
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"

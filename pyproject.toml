@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harmonizecms"
+version = "0.1.0"
+description = "CMS harmonization tooling"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "duckdb",
+  "pyyaml",
+  "pandas",
+  "hydra-core",
+  "omegaconf"
+]
+
+[tool.setuptools]
+packages = ["harmonizecms"]

@@ -1,0 +1,22 @@
+defaults:
+  - _self_
+  - datapaths: medicaid_max_red
+
+table: ps
+year: 2012
+
+paths:
+  basepath: "/path/to/raw"
+  crosswalks_path: "/path/to/crosswalks"
+  output_path: "output"
+
+tables:
+  ps: "conf/datasets/medicaid_max/ps.yaml"
+  ip: "conf/datasets/medicaid_max/ip.yaml"
+
+hydra:
+  run:
+    dir: ${hydra:runtime.cwd}
+
+
+

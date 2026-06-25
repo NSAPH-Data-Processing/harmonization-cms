@@ -1,0 +1,287 @@
+table_name: ip
+description: "Inpatient admissions view. Harmonizes MedPar inpatient admissions across years and source layouts."
+
+path_pattern:
+  - "{basepath}/{year}/medpar*/part-*.parquet"
+  - "{basepath}/{year}/mp*/part-*.parquet"
+
+columns:
+  - bene_id:
+      source:
+        - bene_id
+        - intbid
+        - bid_5333_1
+        - bid_5333_3
+      type: VARCHAR
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - year:
+      source:
+        - medpar_yr_num
+      type: INT
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - state:
+      source:
+        - bene_rsdnc_ssa_state_cd
+        - medpar_bene_rsdnc_ssa_state_cd
+        - state_cd
+      type: INT
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - zip:
+      source:
+        - bene_zip
+        - bene_mlg_cntct_zip_cd
+        - medpar_bene_mlg_cntct_zip_cd
+      type: INT
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - admission_date:
+      type: DATE
+      description: "Date of admission"
+      source:
+        - medpar_admsn_dt
+        - admsn_dt
+        - admsndt
+      cast:
+        VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME({column_name}, '%Y%m%d')) AS DATE) WHEN {column_name} ~ '^[0-9]{{7}}$' AND CAST(SUBSTR({column_name}, 5, 3) AS INTEGER) BETWEEN 1 AND 366 THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME({column_name}, '%Y%j')) AS DATE) ELSE NULL END"
+        DOUBLE: "CASE WHEN {column_name} IS NOT NULL AND CAST({column_name} AS INT) BETWEEN 1900001 AND 2099366 THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME(CAST(CAST({column_name} AS INT) AS VARCHAR), '%Y%j')) AS DATE) ELSE NULL END"
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - discharge_date:
+      type: DATE
+      source:
+        - medpar_dschrg_dt
+        - dschrg_dt
+        - dschrgdt
+      cast:
+        VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME({column_name}, '%Y%m%d')) AS DATE) WHEN {column_name} ~ '^[0-9]{{7}}$' AND CAST(SUBSTR({column_name}, 5, 3) AS INTEGER) BETWEEN 1 AND 366 THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME({column_name}, '%Y%j')) AS DATE) ELSE NULL END"
+        DOUBLE: "CASE WHEN {column_name} IS NOT NULL AND CAST({column_name} AS INT) BETWEEN 1900001 AND 2099366 THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME(CAST(CAST({column_name} AS INT) AS VARCHAR), '%Y%j')) AS DATE) ELSE NULL END"
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  # This block was accidentally nested under discharge_date in the original chunk.
+  - admission_day_cd:
+      type: INT
+      source:
+        - medpar_admsn_day_cd
+        - admsn_day_cd
+        - admsnday
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - admsn_type_cd:
+      type: CHAR(1)
+      source:
+        - ip_admsn_type_cd
+        - type_adm
+        - medpar_ip_admsn_type_cd
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - src_admsn_cd:
+      type: CHAR(1)
+      source:
+        - src_ip_admsn_cd
+        - src_adms
+        - medpar_src_ip_admsn_cd
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dschrg_dstntn_cd:
+      type: CHAR(2)
+      source:
+        - dschrg_dstntn_cd
+        - dstntncd
+        - medpar_dschrg_dstntn_cd
+      cast:
+        numeric: "TRIM(CAST({column_name} AS VARCHAR))"
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - dschrgcd:
+      type: CHAR(1)
+      source:
+        - dschrgcd
+        - bene_dschrg_stus_cd
+        - medpar_bene_dschrg_stus_cd
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  # ---------- Diagnosis codes (25 separate output columns; no `{m}`) ----------
+  - diag1:
+      type: VARCHAR
+      source: [medpar_dgns_cd_1, dgns_cd01, dgns_cd1, dgns_1_cd, dgnscd1]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag2:
+      type: VARCHAR
+      source: [medpar_dgns_cd_2, dgns_cd02, dgns_cd2, dgns_2_cd, dgnscd2]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag3:
+      type: VARCHAR
+      source: [medpar_dgns_cd_3, dgns_cd03, dgns_cd3, dgns_3_cd, dgnscd3]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag4:
+      type: VARCHAR
+      source: [medpar_dgns_cd_4, dgns_cd04, dgns_cd4, dgns_4_cd, dgnscd4]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag5:
+      type: VARCHAR
+      source: [medpar_dgns_cd_5, dgns_cd05, dgns_cd5, dgns_5_cd, dgnscd5]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag6:
+      type: VARCHAR
+      source: [medpar_dgns_cd_6, dgns_cd06, dgns_cd6, dgns_6_cd, dgnscd6]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag7:
+      type: VARCHAR
+      source: [medpar_dgns_cd_7, dgns_cd07, dgns_cd7, dgns_7_cd, dgnscd7]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag8:
+      type: VARCHAR
+      source: [medpar_dgns_cd_8, dgns_cd08, dgns_cd8, dgns_8_cd, dgnscd8]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag9:
+      type: VARCHAR
+      source: [medpar_dgns_cd_9, dgns_cd09, dgns_cd9, dgns_9_cd, dgnscd9]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag10:
+      type: VARCHAR
+      source: [medpar_dgns_cd_10, dgns_cd10, dgns_10_cd, dgnscd10]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag11:
+      type: VARCHAR
+      source: [medpar_dgns_cd_11, dgns_cd11, dgns_11_cd, dgnscd11]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag12:
+      type: VARCHAR
+      source: [medpar_dgns_cd_12, dgns_cd12, dgns_12_cd, dgnscd12]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag13:
+      type: VARCHAR
+      source: [medpar_dgns_cd_13, dgns_cd13, dgns_13_cd, dgnscd13]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag14:
+      type: VARCHAR
+      source: [medpar_dgns_cd_14, dgns_cd14, dgns_14_cd, dgnscd14]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag15:
+      type: VARCHAR
+      source: [medpar_dgns_cd_15, dgns_cd15, dgns_15_cd, dgnscd15]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag16:
+      type: VARCHAR
+      source: [medpar_dgns_cd_16, dgns_cd16, dgns_16_cd, dgnscd16]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag17:
+      type: VARCHAR
+      source: [medpar_dgns_cd_17, dgns_cd17, dgns_17_cd, dgnscd17]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag18:
+      type: VARCHAR
+      source: [medpar_dgns_cd_18, dgns_cd18, dgns_18_cd, dgnscd18]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag19:
+      type: VARCHAR
+      source: [medpar_dgns_cd_19, dgns_cd19, dgns_19_cd, dgnscd19]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag20:
+      type: VARCHAR
+      source: [medpar_dgns_cd_20, dgns_cd20, dgns_20_cd, dgnscd20]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag21:
+      type: VARCHAR
+      source: [medpar_dgns_cd_21, dgns_cd21, dgns_21_cd, dgnscd21]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag22:
+      type: VARCHAR
+      source: [medpar_dgns_cd_22, dgns_cd22, dgns_22_cd, dgnscd22]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag23:
+      type: VARCHAR
+      source: [medpar_dgns_cd_23, dgns_cd23, dgns_23_cd, dgnscd23]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag24:
+      type: VARCHAR
+      source: [medpar_dgns_cd_24, dgns_cd24, dgns_24_cd, dgnscd24]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  - diag25:
+      type: VARCHAR
+      source: [medpar_dgns_cd_25, dgns_cd25, dgns_25_cd, dgnscd25]
+      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+
+  # ---------- Expenditure variables ----------
+  - los_day_cnt:
+      reference: "https://resdac.org/cms-data/variables/days-beneficiarys-stay-hospitalsnf"
+      description: "Count in days of total length of stay"
+      type: INT
+      source: [los_day_cnt, loscnt, medpar_los_day_cnt]
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - drg_price_amt:
+      reference: "https://resdac.org/cms-data/variables/drg-price-amount"
+      description: "DRG price amount"
+      type: DOUBLE
+      source: [drg_price_amt, drgprice, medpar_drg_price_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - drg_outlier_pmt_amt:
+      reference: "https://resdac.org/cms-data/variables/drg-outlier-approved-payment-amount"
+      description: "Outlier payment amount"
+      type: DOUBLE
+      source: [drg_outlier_pmt_amt, outlramt, medpar_drg_outlier_pmt_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - pass_thru_amt:
+      reference: "https://resdac.org/cms-data/variables/pass-thru-diem-amount-stay"
+      description: "Pass-through per diem amounts total"
+      type: DOUBLE
+      source: [pass_thru_amt, passthru, medpar_pass_thru_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - mdcr_pmt_amt:
+      reference: "https://resdac.org/cms-data/variables/total-medicare-payment-amount"
+      description: "Total Medicare payment amount"
+      type: DOUBLE
+      source: [mdcr_pmt_amt, pmt_amt, medpar_mdcr_pmt_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - bene_blood_ddctbl_amt:
+      reference: "https://resdac.org/cms-data/variables/beneficiarys-liability-blood-deductible-stay"
+      description: "Beneficiary liability for blood deductible"
+      type: DOUBLE
+      source: [bene_blood_ddctbl_amt, blddedam, medpar_bene_blood_ddctbl_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - bene_prmry_pyr_amt:
+      reference: "https://resdac.org/cms-data/variables/primary-payer-paid-amount"
+      description: "Primary payer paid amount"
+      type: DOUBLE
+      source: [bene_prmry_pyr_amt, prpayamt, medpar_bene_prmry_pyr_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - bene_ip_ddctbl_amt:
+      reference: "https://resdac.org/cms-data/variables/beneficiarys-liability-deductible-stay"
+      description: "Beneficiary inpatient deductible amount"
+      type: DOUBLE
+      source: [bene_ip_ddctbl_amt, ded_amt, medpar_bene_ip_ddctbl_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+  - bene_pta_coinsrnc_amt:
+      reference: "https://resdac.org/cms-data/variables/beneficiarys-liability-part-coinsurance-stay"
+      description: "Beneficiary Part A coinsurance amount"
+      type: DOUBLE
+      source: [bene_pta_coinsrnc_amt, coin_amt, medpar_bene_pta_coinsrnc_amt]
+      cast:
+        "*": "TRY_CAST({column_name} AS DOUBLE)"

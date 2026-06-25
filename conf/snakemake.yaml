@@ -1,0 +1,11 @@
+paths:
+  basepath: "data/medicaid_max_red/input/max_files"
+  output_path: "data/medicaid_max_red/output"
+  crosswalks_path: "data/medicaid_max_red/input/crosswalks"
+
+tables:
+  - ip
+
+years:
+  - 2000
+  - 2001

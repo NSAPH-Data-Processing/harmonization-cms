@@ -1,0 +1,8 @@
+name: medicaid_max_red
+dirs:
+  input: 
+    max_files: null
+    crosswalks: null
+  output:
+    ip: null
+    ps: null

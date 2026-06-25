@@ -1,0 +1,343 @@
+table_name: ip
+description: Medicaid MAX inpatient (ip) harmonization rules
+
+path_pattern:
+  - "{basepath}/{year}/maxdata_*_ip/part-*.parquet"
+
+columns:
+- bene_id:
+    source:
+      - BENE_ID
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- msis_id:
+    source:
+      - MSIS_ID
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- state:
+    source:
+      - STATE_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- year:
+    source:
+      - YR_NUM
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- dob:
+    source:
+      - EL_DOB
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- sex:
+    source:
+      - EL_SEX_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_ethncy_cd:
+    source:
+      - EL_RACE_ETHNCY_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_1:
+    source:
+      - RACE_CODE_1
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_2:
+    source:
+      - RACE_CODE_2
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_3:
+    source:
+      - RACE_CODE_3
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_4:
+    source:
+      - RACE_CODE_4
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- race_code_5:
+    source:
+      - RACE_CODE_5
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ethnicity_code:
+    source:
+      - ETHNICITY_CODE
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ss_elgblty_cd_ltst:
+    source:
+      - EL_SS_ELGBLTY_CD_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- ss_elgblty_cd_mo:
+    source:
+      - EL_SS_ELGBLTY_CD_MO
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- max_elgblty_cd_ltst:
+    source:
+      - EL_MAX_ELGBLTY_CD_LTST
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- max_elgblty_cd_mo:
+    source:
+      - EL_MAX_ELGBLTY_CD_MO
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_ann_xovr_old:
+    source:
+      - EL_MDCR_ANN_XOVR_OLD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- msng_elg_data:
+    source:
+      - MSNG_ELG_DATA
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcr_xovr_clm_bsd_cd:
+    source:
+      - EL_MDCR_XOVR_CLM_BSD_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_ann_xovr_99:
+    source:
+      - EL_MDCR_ANN_XOVR_99
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- msis_tos:
+    source:
+      - MSIS_TOS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- msis_top:
+    source:
+      - MSIS_TOP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- max_tos:
+    source:
+      - MAX_TOS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- prvdr_id_nmbr:
+    source:
+      - PRVDR_ID_NMBR
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- npi:
+    source:
+      - NPI
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- taxonomy:
+    source:
+      - TAXONOMY
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- type_clm_cd:
+    source:
+      - TYPE_CLM_CD
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- adjust_cd:
+    source:
+      - ADJUST_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- php_type:
+    source:
+      - PHP_TYPE
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- php_id:
+    source:
+      - PHP_ID
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- mdcd_pymt_amt:
+    source:
+      - MDCD_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- tp_pymt_amt:
+    source:
+      - TP_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- pymt_dt:
+    source:
+      - PYMT_DT
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- chrg_amt:
+    source:
+      - CHRG_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- php_val:
+    source:
+      - PHP_VAL
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_coinsur_pymt_amt:
+    source:
+      - MDCR_COINSUR_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcr_ded_pymt_amt:
+    source:
+      - MDCR_DED_PYMT_AMT
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- admsn_dt:
+    source:
+      - ADMSN_DT
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- srvc_bgn_dt:
+    source:
+      - SRVC_BGN_DT
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- srvc_end_dt:
+    source:
+      - SRVC_END_DT
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- prncpl_prcdr_dt:
+    source:
+      - PRNCPL_PRCDR_DT
+    type: DATE
+    cast:
+      "*": "TRY_CAST({column_name} AS DATE)"
+- rcpnt_dlvry_cd:
+    source:
+      - RCPNT_DLVRY_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- mdcd_cvrd_ip_days:
+    source:
+      - MDCD_CVRD_IP_DAYS
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- patient_status_cd:
+    source:
+      - PATIENT_STATUS_CD
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- drg_rel_group_ind:
+    source:
+      - DRG_REL_GROUP_IND
+    type: VARCHAR
+    cast:
+      "*": "TRY_CAST({column_name} AS VARCHAR)"
+- drg_rel_group:
+    source:
+      - DRG_REL_GROUP
+    type: DOUBLE
+    cast:
+      "*": "TRY_CAST({column_name} AS DOUBLE)"
+- diag_cd:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Diagnosis codes (9 elements; DIAG_CD_1..DIAG_CD_9)"
+    source_component_sets:
+      - [DIAG_CD_1, DIAG_CD_2, DIAG_CD_3, DIAG_CD_4, DIAG_CD_5, DIAG_CD_6, DIAG_CD_7, DIAG_CD_8, DIAG_CD_9]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- prcdr_cd_sys:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Procedure code system (6 elements; PRCDR_CD_SYS_1..PRCDR_CD_SYS_6)"
+    source_component_sets:
+      - [PRCDR_CD_SYS_1, PRCDR_CD_SYS_2, PRCDR_CD_SYS_3, PRCDR_CD_SYS_4, PRCDR_CD_SYS_5, PRCDR_CD_SYS_6]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- prcdr_cd:
+    kind: array
+    type: "VARCHAR[]"
+    description: "Procedure codes (6 elements; PRCDR_CD_1..PRCDR_CD_6)"
+    source_component_sets:
+      - [PRCDR_CD_1, PRCDR_CD_2, PRCDR_CD_3, PRCDR_CD_4, PRCDR_CD_5, PRCDR_CD_6]
+    element_cast: "TRY_CAST({column_name} AS VARCHAR)"
+    cast:
+      "*": "{column_name}"
+- ub_92_rev_cd_gp:
+    kind: array
+    type: "DOUBLE[]"
+    description: "UB-92 revenue code group (23 elements)"
+    source_component_sets:
+      - [UB_92_REV_CD_GP_1, UB_92_REV_CD_GP_2, UB_92_REV_CD_GP_3, UB_92_REV_CD_GP_4, UB_92_REV_CD_GP_5, UB_92_REV_CD_GP_6, UB_92_REV_CD_GP_7, UB_92_REV_CD_GP_8, UB_92_REV_CD_GP_9, UB_92_REV_CD_GP_10, UB_92_REV_CD_GP_11, UB_92_REV_CD_GP_12, UB_92_REV_CD_GP_13, UB_92_REV_CD_GP_14, UB_92_REV_CD_GP_15, UB_92_REV_CD_GP_16, UB_92_REV_CD_GP_17, UB_92_REV_CD_GP_18, UB_92_REV_CD_GP_19, UB_92_REV_CD_GP_20, UB_92_REV_CD_GP_21, UB_92_REV_CD_GP_22, UB_92_REV_CD_GP_23]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- ub_92_rev_cd_chgs:
+    kind: array
+    type: "DOUBLE[]"
+    description: "UB-92 revenue code charges (23 elements)"
+    source_component_sets:
+      - [UB_92_REV_CD_CHGS_1, UB_92_REV_CD_CHGS_2, UB_92_REV_CD_CHGS_3, UB_92_REV_CD_CHGS_4, UB_92_REV_CD_CHGS_5, UB_92_REV_CD_CHGS_6, UB_92_REV_CD_CHGS_7, UB_92_REV_CD_CHGS_8, UB_92_REV_CD_CHGS_9, UB_92_REV_CD_CHGS_10, UB_92_REV_CD_CHGS_11, UB_92_REV_CD_CHGS_12, UB_92_REV_CD_CHGS_13, UB_92_REV_CD_CHGS_14, UB_92_REV_CD_CHGS_15, UB_92_REV_CD_CHGS_16, UB_92_REV_CD_CHGS_17, UB_92_REV_CD_CHGS_18, UB_92_REV_CD_CHGS_19, UB_92_REV_CD_CHGS_20, UB_92_REV_CD_CHGS_21, UB_92_REV_CD_CHGS_22, UB_92_REV_CD_CHGS_23]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"
+- ub_92_rev_cd_units:
+    kind: array
+    type: "DOUBLE[]"
+    description: "UB-92 revenue code units (23 elements)"
+    source_component_sets:
+      - [UB_92_REV_CD_UNITS_1, UB_92_REV_CD_UNITS_2, UB_92_REV_CD_UNITS_3, UB_92_REV_CD_UNITS_4, UB_92_REV_CD_UNITS_5, UB_92_REV_CD_UNITS_6, UB_92_REV_CD_UNITS_7, UB_92_REV_CD_UNITS_8, UB_92_REV_CD_UNITS_9, UB_92_REV_CD_UNITS_10, UB_92_REV_CD_UNITS_11, UB_92_REV_CD_UNITS_12, UB_92_REV_CD_UNITS_13, UB_92_REV_CD_UNITS_14, UB_92_REV_CD_UNITS_15, UB_92_REV_CD_UNITS_16, UB_92_REV_CD_UNITS_17, UB_92_REV_CD_UNITS_18, UB_92_REV_CD_UNITS_19, UB_92_REV_CD_UNITS_20, UB_92_REV_CD_UNITS_21, UB_92_REV_CD_UNITS_22, UB_92_REV_CD_UNITS_23]
+    element_cast: "TRY_CAST({column_name} AS DOUBLE)"
+    cast:
+      "*": "{column_name}"

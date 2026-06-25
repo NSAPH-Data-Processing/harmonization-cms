@@ -1,0 +1,19 @@
+name: cms_data_prep
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy=1.26.3
+  - pandas=2.1.4
+  - pyarrow=14.0.2
+  - duckdb=1.0.0       
+  - pyreadstat
+  - pyyaml
+  - pip=23.3.2
+  - ipykernel
+  - pip:
+      - hydra-core==1.3.2
+      - matplotlib==3.8.2
+      - seaborn==0.13.2
+      - altair==5.2.0
+      - snakemake==8.4.8
