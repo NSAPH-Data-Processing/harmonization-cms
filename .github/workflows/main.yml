@@ -145,14 +145,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 2. Create local branches from remote (required for sync action to work properly)
-      - name: Create local branches for sync
-        run: |
-          git branch -r | grep -v '\->' | while read remote; do
-            git branch --track "${remote#origin/}" "$remote" 2>/dev/null || true
-          done
-
-      # 3. Secure AWS Authentication using OIDC
+      # 2. Secure AWS Authentication using OIDC
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
@@ -160,9 +153,16 @@ jobs:
           role-session-name: SyncToCodeCommit_${{ github.run_id }}
           aws-region: ${{ secrets.REGION }}
 
-      # 4. Sync to CodeCommit
-      - name: Sync up to CodeCommit
-        uses: tsgit18/sync-up-to-codecommit-action@v1.0.6
-        with:
-          repository_name: ${{ secrets.REPO_NAME }}
-          aws_region: ${{ secrets.REGION }}
+      # 3. Configure Git to use CodeCommit credential helper
+      - name: Configure Git credentials
+        run: |
+          git config --global credential.helper '!aws codecommit credential-helper --region ${{ secrets.REGION }}'
+          git config --global credential.'https://git-codecommit.${{ secrets.REGION }}.amazonaws.com'.useHttpPath true
+
+      # 4. Add CodeCommit remote
+      - name: Add CodeCommit remote
+        run: git remote add codecommit "https://git-codecommit.${{ secrets.REGION }}.amazonaws.com/v1/repos/${{ secrets.REPO_NAME }}"
+
+      # 5. Push only main branch to CodeCommit
+      - name: Push main branch to CodeCommit
+        run: git push codecommit main
