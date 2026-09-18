@@ -341,3 +341,17 @@ columns:
     element_cast: "TRY_CAST({column_name} AS DOUBLE)"
     cast:
       "*": "{column_name}"
+
+# no xwalk actually for this data, only use this for testing
+
+# crosswalks:
+#   - name: state_fips
+#     path: "{crosswalks_path}/state_fips.csv"
+#     format: csv
+#     join:
+#       how: left
+#       "on":
+#         state: state 
+#     select:
+#       add:
+#         alpha_state: alpha_state

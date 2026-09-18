@@ -1,0 +1,36 @@
+paths:
+  basepath: "data/medicare_mbsf_ccw/input"
+  output_path: "data/medicare_mbsf_ccw/output"
+  crosswalks_path: "null"
+
+table: mbsf_cc 
+
+tables:
+  mbsf_cc: "conf/datasets/medicare_mbsf_ccw/mbsf_cc.yaml"
+  #mbsf_chronic: "conf/datasets/medicare_mbsf_ccw/mbsf_chronic.yaml"
+
+years:
+#comment out years 2017-2022 when running mbsf_cc and 2000-2016 when running mbsf_chronic
+  - 2000
+  - 2001
+  - 2002
+  - 2003
+  - 2004
+  - 2005
+  - 2006
+  - 2007
+  - 2008
+  - 2009
+  - 2010
+  - 2011
+  - 2012
+  - 2013
+  - 2014
+  - 2015
+  - 2016
+  - 2017
+  - 2018
+  - 2019
+  - 2020
+  - 2021
+  - 2022

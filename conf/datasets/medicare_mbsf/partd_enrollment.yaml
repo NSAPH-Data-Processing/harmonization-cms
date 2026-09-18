@@ -1,0 +1,142 @@
+table_name: partd_enrollment
+description: >
+  Part D enrollment variables from the MBSF Base A/B/C/D file: annual Part D
+  coverage-month count and the twelve monthly Part D contract IDs. Grain is one
+  row per beneficiary per year (bene_id, year). Links to PDE events on bene_id.
+
+path_pattern:
+  - "{basepath}/{year}/mbsf_abcd*/part-*.parquet"
+
+columns:
+  - bene_id:
+      source:
+        - bene_id
+        - BENE_ID
+      type: VARCHAR
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - year:
+      source:
+        - rfrnc_yr
+        - RFRNC_YR
+        - bene_enrollmt_ref_yr
+        - BENE_ENROLLMT_REF_YR
+      type: INT
+      cast:
+        "*": >
+          CASE
+            WHEN TRY_CAST({column_name} AS INT) < 20 THEN 2000 + TRY_CAST({column_name} AS INT)
+            WHEN TRY_CAST({column_name} AS INT) >= 20 AND TRY_CAST({column_name} AS INT) < 100 THEN 1900 + TRY_CAST({column_name} AS INT)
+            ELSE TRY_CAST({column_name} AS INT)
+          END
+
+  - ptd_plan_cvrg_mons:
+      type: INT
+      description: "Number of months during the year with Part D coverage (0-12)."
+      source:
+        - PTD_MO
+      cast:
+        "*": "CASE WHEN {column_name} IS NULL THEN NULL ELSE TRY_CAST({column_name} AS INT) END"
+
+  # ---------------------------------------------------------------------------
+  # Monthly Part D contract IDs (January - December)
+  # Long name PTD_CNTRCT_ID_01..12 ; short name PTDCNTRCT01..12
+  # These are full contract-ID strings (not packed characters).
+  # ---------------------------------------------------------------------------
+
+  - ptd_cntrct_id_01:
+      type: VARCHAR
+      description: "Part D contract ID for January"
+      source:
+        - PTDCNTRCT01
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_02:
+      type: VARCHAR
+      description: "Part D contract ID for February"
+      source:
+        - PTDCNTRCT02
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_03:
+      type: VARCHAR
+      description: "Part D contract ID for March"
+      source:
+        - PTDCNTRCT03
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_04:
+      type: VARCHAR
+      description: "Part D contract ID for April"
+      source:
+        - PTDCNTRCT04
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_05:
+      type: VARCHAR
+      description: "Part D contract ID for May"
+      source:
+        - PTDCNTRCT05
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_06:
+      type: VARCHAR
+      description: "Part D contract ID for June"
+      source:
+        - PTDCNTRCT06
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_07:
+      type: VARCHAR
+      description: "Part D contract ID for July"
+      source:
+        - PTDCNTRCT07
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_08:
+      type: VARCHAR
+      description: "Part D contract ID for August"
+      source:
+        - PTDCNTRCT08
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_09:
+      type: VARCHAR
+      description: "Part D contract ID for September"
+      source:
+        - PTDCNTRCT09
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_10:
+      type: VARCHAR
+      description: "Part D contract ID for October"
+      source:
+        - PTDCNTRCT10
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_11:
+      type: VARCHAR
+      description: "Part D contract ID for November"
+      source:
+        - PTDCNTRCT11
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptd_cntrct_id_12:
+      type: VARCHAR
+      description: "Part D contract ID for December"
+      source:
+        - PTDCNTRCT12
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"

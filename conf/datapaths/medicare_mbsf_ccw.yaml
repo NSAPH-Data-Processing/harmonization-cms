@@ -1,0 +1,6 @@
+name: medicare_mbsf_ccw
+dirs:
+  input: null
+  output: 
+    mbsf_cc: null
+    mbsf_chronic: null

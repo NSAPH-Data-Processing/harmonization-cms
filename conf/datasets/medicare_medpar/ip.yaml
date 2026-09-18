@@ -12,6 +12,7 @@ columns:
         - intbid
         - bid_5333_1
         - bid_5333_3
+        - bid_5333_5
       type: VARCHAR
       cast:
         "*": "TRY_CAST({column_name} AS VARCHAR)"
@@ -40,6 +41,16 @@ columns:
       type: INT
       cast:
         "*": "TRY_CAST({column_name} AS INT)"
+
+  - ss_ls_snf_cd:
+      type: CHAR(1)
+      description: "Indicator identifying whether the MedPAR stay is from a short-stay hospital, long-stay hospital, or skilled nursing facility (SNF). Derived from the third character of the provider number on the first claim included in the MedPAR stay."
+      source:
+        - medpar_ss_ls_snf_ind_cd
+        - ss_ls_snf_ind_cd
+        - sslssnf
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
 
   - admission_date:
       type: DATE
@@ -111,109 +122,43 @@ columns:
       cast:
         "*": "TRY_CAST({column_name} AS VARCHAR)"
 
-  # ---------- Diagnosis codes (25 separate output columns; no `{m}`) ----------
-  - diag1:
-      type: VARCHAR
-      source: [medpar_dgns_cd_1, dgns_cd01, dgns_cd1, dgns_1_cd, dgnscd1]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag2:
-      type: VARCHAR
-      source: [medpar_dgns_cd_2, dgns_cd02, dgns_cd2, dgns_2_cd, dgnscd2]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag3:
-      type: VARCHAR
-      source: [medpar_dgns_cd_3, dgns_cd03, dgns_cd3, dgns_3_cd, dgnscd3]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag4:
-      type: VARCHAR
-      source: [medpar_dgns_cd_4, dgns_cd04, dgns_cd4, dgns_4_cd, dgnscd4]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag5:
-      type: VARCHAR
-      source: [medpar_dgns_cd_5, dgns_cd05, dgns_cd5, dgns_5_cd, dgnscd5]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag6:
-      type: VARCHAR
-      source: [medpar_dgns_cd_6, dgns_cd06, dgns_cd6, dgns_6_cd, dgnscd6]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag7:
-      type: VARCHAR
-      source: [medpar_dgns_cd_7, dgns_cd07, dgns_cd7, dgns_7_cd, dgnscd7]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag8:
-      type: VARCHAR
-      source: [medpar_dgns_cd_8, dgns_cd08, dgns_cd8, dgns_8_cd, dgnscd8]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag9:
-      type: VARCHAR
-      source: [medpar_dgns_cd_9, dgns_cd09, dgns_cd9, dgns_9_cd, dgnscd9]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag10:
-      type: VARCHAR
-      source: [medpar_dgns_cd_10, dgns_cd10, dgns_10_cd, dgnscd10]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag11:
-      type: VARCHAR
-      source: [medpar_dgns_cd_11, dgns_cd11, dgns_11_cd, dgnscd11]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag12:
-      type: VARCHAR
-      source: [medpar_dgns_cd_12, dgns_cd12, dgns_12_cd, dgnscd12]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag13:
-      type: VARCHAR
-      source: [medpar_dgns_cd_13, dgns_cd13, dgns_13_cd, dgnscd13]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag14:
-      type: VARCHAR
-      source: [medpar_dgns_cd_14, dgns_cd14, dgns_14_cd, dgnscd14]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag15:
-      type: VARCHAR
-      source: [medpar_dgns_cd_15, dgns_cd15, dgns_15_cd, dgnscd15]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag16:
-      type: VARCHAR
-      source: [medpar_dgns_cd_16, dgns_cd16, dgns_16_cd, dgnscd16]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag17:
-      type: VARCHAR
-      source: [medpar_dgns_cd_17, dgns_cd17, dgns_17_cd, dgnscd17]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag18:
-      type: VARCHAR
-      source: [medpar_dgns_cd_18, dgns_cd18, dgns_18_cd, dgnscd18]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag19:
-      type: VARCHAR
-      source: [medpar_dgns_cd_19, dgns_cd19, dgns_19_cd, dgnscd19]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag20:
-      type: VARCHAR
-      source: [medpar_dgns_cd_20, dgns_cd20, dgns_20_cd, dgnscd20]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag21:
-      type: VARCHAR
-      source: [medpar_dgns_cd_21, dgns_cd21, dgns_21_cd, dgnscd21]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag22:
-      type: VARCHAR
-      source: [medpar_dgns_cd_22, dgns_cd22, dgns_22_cd, dgnscd22]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag23:
-      type: VARCHAR
-      source: [medpar_dgns_cd_23, dgns_cd23, dgns_23_cd, dgnscd23]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag24:
-      type: VARCHAR
-      source: [medpar_dgns_cd_24, dgns_cd24, dgns_24_cd, dgnscd24]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
-  - diag25:
-      type: VARCHAR
-      source: [medpar_dgns_cd_25, dgns_cd25, dgns_25_cd, dgnscd25]
-      cast: {"*": "TRY_CAST({column_name} AS VARCHAR)"}
+  # ---------- Diagnosis codes (array of up to 25 diagnosis codes per record) ----------
+  - diagnoses:
+      kind: array
+      type: "VARCHAR[]"
+      optional: true
+      drop_nulls: true
+      description: >
+          Array of diagnosis codes per record, using all available source columns.
+          The number of diagnosis fields varies across datasets and years, so records may contain fewer than 25 codes.
+      reference: "internal harmonization mapping"
 
-  # ---------- Expenditure variables ----------
+      source_component_sets:
+          - [DGNSCD1, DGNSCD2, DGNSCD3, DGNSCD4, DGNSCD5, DGNSCD6, DGNSCD7, DGNSCD8, DGNSCD9, DGNSCD10,
+            DGNSCD11, DGNSCD12, DGNSCD13, DGNSCD14, DGNSCD15, DGNSCD16, DGNSCD17, DGNSCD18, DGNSCD19, DGNSCD20,
+            DGNSCD21, DGNSCD22, DGNSCD23, DGNSCD24, DGNSCD25]
+          - [medpar_dgns_cd_1, medpar_dgns_cd_2, medpar_dgns_cd_3, medpar_dgns_cd_4, medpar_dgns_cd_5,
+            medpar_dgns_cd_6, medpar_dgns_cd_7, medpar_dgns_cd_8, medpar_dgns_cd_9, medpar_dgns_cd_10,
+            medpar_dgns_cd_11, medpar_dgns_cd_12, medpar_dgns_cd_13, medpar_dgns_cd_14, medpar_dgns_cd_15,
+            medpar_dgns_cd_16, medpar_dgns_cd_17, medpar_dgns_cd_18, medpar_dgns_cd_19, medpar_dgns_cd_20,
+            medpar_dgns_cd_21, medpar_dgns_cd_22, medpar_dgns_cd_23, medpar_dgns_cd_24, medpar_dgns_cd_25]
+          - [dgns_cd01, dgns_cd02, dgns_cd03, dgns_cd04, dgns_cd05, dgns_cd06, dgns_cd07, dgns_cd08, dgns_cd09, dgns_cd10,
+            dgns_cd11, dgns_cd12, dgns_cd13, dgns_cd14, dgns_cd15, dgns_cd16, dgns_cd17, dgns_cd18, dgns_cd19, dgns_cd20,
+            dgns_cd21, dgns_cd22, dgns_cd23, dgns_cd24, dgns_cd25]
+          - [dgns_cd1, dgns_cd2, dgns_cd3, dgns_cd4, dgns_cd5, dgns_cd6, dgns_cd7, dgns_cd8, dgns_cd9, dgns_cd10,
+            dgns_cd11, dgns_cd12, dgns_cd13, dgns_cd14, dgns_cd15, dgns_cd16, dgns_cd17, dgns_cd18, dgns_cd19, dgns_cd20,
+            dgns_cd21, dgns_cd22, dgns_cd23, dgns_cd24, dgns_cd25]
+
+      element_cast: >
+        CASE
+          WHEN TRIM(CAST({column_name} AS VARCHAR)) = '' THEN NULL
+          ELSE TRIM(CAST({column_name} AS VARCHAR))
+        END
+        
+      cast:
+          "*": "{column_name}"
+        
+    # ---------- Expenditure variables ----------
   - los_day_cnt:
       reference: "https://resdac.org/cms-data/variables/days-beneficiarys-stay-hospitalsnf"
       description: "Count in days of total length of stay"
@@ -285,3 +230,23 @@ columns:
       source: [bene_pta_coinsrnc_amt, coin_amt, medpar_bene_pta_coinsrnc_amt]
       cast:
         "*": "TRY_CAST({column_name} AS DOUBLE)"
+
+    # ---------- bene_id crosswalk (2000-2006) ----------
+
+crosswalks:
+  - name: bene_xwalk
+    min_year: 2000
+    max_year: 2006
+    path: "{crosswalks_path}/bene_xwalk.parquet"
+    format: parquet
+    join:
+      how: left
+      "on":
+        bene_id: bid
+    select:
+      exclude_base:
+        - bene_id
+      coalesce:
+        bene_id:
+          - cw_bene_xwalk.bene_id
+          - base.bene_id

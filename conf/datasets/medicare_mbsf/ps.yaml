@@ -1,0 +1,647 @@
+table_name: ps
+description: "Patient Summary view combining multiple MBSF files"
+
+path_pattern:
+  - "{basepath}/{year}/mbsf_ab*/part-*.parquet"
+  - "{basepath}/{year}/dnm/part-*.parquet"
+  - "{basepath}/{year}/dn100__1/part-*.parquet"
+  - "{basepath}/{year}/denominator_file/part-*.parquet"
+  - "{basepath}/{year}/den/part-*.parquet"
+
+columns:
+  - bene_id:
+      source:
+        - bene_id
+        - intbid
+        - bid_5333_1
+        - bid_5333_3
+        - bid_5333_5
+        - qid
+      type: VARCHAR
+      cast:
+        "*": "{column_name}::VARCHAR"
+
+  - year:
+      source:
+        - rfrnc_yr
+        - enrolyr
+        - enroll_yr
+        - bene_enrollmt_ref_yr
+      type: INT
+      cast:
+        "*": >
+          CASE
+            WHEN TRY_CAST({column_name} AS INT) < 20 THEN 2000 + TRY_CAST({column_name} AS INT)
+            WHEN TRY_CAST({column_name} AS INT) >= 20 AND TRY_CAST({column_name} AS INT) < 100 THEN 1900 + TRY_CAST({column_name} AS INT)
+            ELSE TRY_CAST({column_name} AS INT)
+          END
+
+  - zip:
+      source:
+        - bene_zip
+        - bene_zip_cd
+        - zip
+        - zipcode
+        - zip_cd
+      type: INT
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - state:
+      source:
+        - state_cd
+        - state
+        - state_code
+        - ssa_state
+      type: INT
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - dob:
+      type: DATE
+      description: "Date of birth"
+      source:
+        - bene_dob
+        - dob
+        - bene_birth_dt
+      cast:
+        VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME({column_name}, '%Y%m%d')) AS DATE) ELSE NULL END"
+        DOUBLE: "CASE WHEN {column_name} >= 19000000 THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME(LPAD(CAST({column_name} AS VARCHAR), 8, '0'), '%Y%m%d')) AS DATE) ELSE NULL END"
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - dod:
+      type: DATE
+      description: "Date of beneficiary death, if available"
+      source:
+        - death_dt
+        - bef_dod
+        - bene_dod
+        - bene_death_dt
+      cast:
+        VARCHAR: "CASE WHEN {column_name} ~ '^[0-9]{{8}}$' AND {column_name} NOT IN ('00000000') THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME({column_name}, '%Y%m%d')) AS DATE) ELSE NULL END"
+        DOUBLE: "CASE WHEN {column_name} >= 19000000 THEN CAST(STRFTIME('%Y-%m-%d', STRPTIME(LPAD(CAST({column_name} AS VARCHAR), 8, '0'), '%Y%m%d')) AS DATE) ELSE NULL END"
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - county:
+      type: VARCHAR
+      description: "CMS provided county code"
+      source:
+        - cnty_cd
+        - bene_county_cd
+        - ssa_county
+      cast:
+        "*": "{column_name}::VARCHAR"
+
+  - sex:
+      reference: "https://resdac.org/cms-data/variables/sex-beneficiary-0"
+      type: VARCHAR
+      source:
+        - sex
+        - bene_sex_ident_cd
+      cast:
+        "*": "{column_name}::VARCHAR"
+
+  - race:
+      reference: "https://resdac.org/cms-data/variables/beneficiary-race-code-ffs"
+      type: VARCHAR
+      source:
+        - bene_race_cd
+        - race
+      cast:
+        "*": "{column_name}::VARCHAR"
+
+  - dod_ndi:
+      type: DATE
+      description: "Date of death as reported on death certificate (NDI) and available for 1999-2016 only"
+      reference: "https://resdac.org/cms-data/variables/ndi-date-deathmbsf"
+      source: ndi_death_dt
+      cast:
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - race_rti:
+      description: "Research Triangle Institute (RTI) Race Code"
+      reference: "https://resdac.org/cms-data/variables/research-triangle-institute-rti-race-code"
+      source: rti_race_cd
+      cast:
+        "*": "{column_name}"
+
+  # ---------------------------------------------------------------------------
+# Month-wise scalar HMO indicators 
+# ---------------------------------------------------------------------------
+
+  - hmo_01:
+      type: VARCHAR
+      description: "HMO enrollment indicator for January"
+      # Prefer explicit January variables, else fall back to packed string
+      source:
+        - hmoind01
+        - bene_hmo_ind_01
+        - hmoind        # packed 12-char
+        - hmoind12      # packed 12-char
+      cast:
+        # For VARCHAR sources (month-wise or packed), take the 1st character
+        VARCHAR: "SUBSTR({column_name}, 1, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_02:
+      type: VARCHAR
+      description: "HMO enrollment indicator for February"
+      source:
+        - hmoind02
+        - bene_hmo_ind_02
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 2, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_03:
+      type: VARCHAR
+      description: "HMO enrollment indicator for March"
+      source:
+        - hmoind03
+        - bene_hmo_ind_03
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 3, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_04:
+      type: VARCHAR
+      description: "HMO enrollment indicator for April"
+      source:
+        - hmoind04
+        - bene_hmo_ind_04
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 4, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_05:
+      type: VARCHAR
+      description: "HMO enrollment indicator for May"
+      source:
+        - hmoind05
+        - bene_hmo_ind_05
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 5, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_06:
+      type: VARCHAR
+      description: "HMO enrollment indicator for June"
+      source:
+        - hmoind06
+        - bene_hmo_ind_06
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 6, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_07:
+      type: VARCHAR
+      description: "HMO enrollment indicator for July"
+      source:
+        - hmoind07
+        - bene_hmo_ind_07
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 7, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_08:
+      type: VARCHAR
+      description: "HMO enrollment indicator for August"
+      source:
+        - hmoind08
+        - bene_hmo_ind_08
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 8, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_09:
+      type: VARCHAR
+      description: "HMO enrollment indicator for September"
+      source:
+        - hmoind09
+        - bene_hmo_ind_09
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 9, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_10:
+      type: VARCHAR
+      description: "HMO enrollment indicator for October"
+      source:
+        - hmoind10
+        - bene_hmo_ind_10
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 10, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_11:
+      type: VARCHAR
+      description: "HMO enrollment indicator for November"
+      source:
+        - hmoind11
+        - bene_hmo_ind_11
+        - hmoind
+        - hmoind12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 11, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_12:
+      type: VARCHAR
+      description: "HMO enrollment indicator for December"
+      source:
+        - hmoind12
+        - bene_hmo_ind_12
+        - hmoind       # if used as packed 12-char in some years
+        - hmoind12     # if also used as packed in some years
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 12, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - hmo_cvg_count:
+      type: INT
+      optional: false
+      description: "Number of months during the year the beneficiary received benefits through a managed care plan"
+      reference: "https://requests.resdac.org/cms-data/variables/hmo-coverage-count"
+      source:
+        - hmo_mo
+        - hmocovg
+        - bene_hmo_cvrage_tot_mons
+      cast:
+        "*": "CASE WHEN {column_name} IS NULL THEN NULL ELSE TRY_CAST({column_name} AS INT) END"
+
+  # ---------------------------------------------------------------------------
+  # Month-wise scalar BUY-IN indicators
+  # ---------------------------------------------------------------------------
+
+  - buyin_01:
+      type: VARCHAR
+      description: "State buy-in indicator for January"
+      source:
+        - buyin01
+        - bene_mdcr_entlmt_buyin_ind_01
+        - medicare_buy_in    # packed 12-char
+        - buyin12            # packed 12-char
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 1, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_02:
+      type: VARCHAR
+      description: "State buy-in indicator for February"
+      source:
+        - buyin02
+        - bene_mdcr_entlmt_buyin_ind_02
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 2, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_03:
+      type: VARCHAR
+      description: "State buy-in indicator for March"
+      source:
+        - buyin03
+        - bene_mdcr_entlmt_buyin_ind_03
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 3, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_04:
+      type: VARCHAR
+      description: "State buy-in indicator for April"
+      source:
+        - buyin04
+        - bene_mdcr_entlmt_buyin_ind_04
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 4, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_05:
+      type: VARCHAR
+      description: "State buy-in indicator for May"
+      source:
+        - buyin05
+        - bene_mdcr_entlmt_buyin_ind_05
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 5, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_06:
+      type: VARCHAR
+      description: "State buy-in indicator for June"
+      source:
+        - buyin06
+        - bene_mdcr_entlmt_buyin_ind_06
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 6, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_07:
+      type: VARCHAR
+      description: "State buy-in indicator for July"
+      source:
+        - buyin07
+        - bene_mdcr_entlmt_buyin_ind_07
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 7, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_08:
+      type: VARCHAR
+      description: "State buy-in indicator for August"
+      source:
+        - buyin08
+        - bene_mdcr_entlmt_buyin_ind_08
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 8, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_09:
+      type: VARCHAR
+      description: "State buy-in indicator for September"
+      source:
+        - buyin09
+        - bene_mdcr_entlmt_buyin_ind_09
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 9, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_10:
+      type: VARCHAR
+      description: "State buy-in indicator for October"
+      source:
+        - buyin10
+        - bene_mdcr_entlmt_buyin_ind_10
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 10, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_11:
+      type: VARCHAR
+      description: "State buy-in indicator for November"
+      source:
+        - buyin11
+        - bene_mdcr_entlmt_buyin_ind_11
+        - medicare_buy_in
+        - buyin12
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 11, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - buyin_12:
+      type: VARCHAR
+      description: "State buy-in indicator for December"
+      source:
+        - buyin12
+        - bene_mdcr_entlmt_buyin_ind_12
+        - medicare_buy_in     # if used as packed 12-char in some years
+        - buyin12             # if also used as packed in some years
+      cast:
+        VARCHAR: "SUBSTR({column_name}, 12, 1)"
+        "*": "CAST({column_name} AS VARCHAR)"
+        
+  - buyin_cvg_count:
+      type: INT
+      optional: false
+      description: "Number of months during the year when the beneficiary premium was paid by the state."
+      reference: "https://resdac.org/cms-data/variables/state-buy-coverage-count"
+      source:
+        - buyin_mo
+        - buycovg
+        - state_buy_in_mo
+        - bene_state_buyin_tot_mons
+      cast:
+        "*": "CASE WHEN {column_name} IS NULL THEN NULL ELSE TRY_CAST({column_name} AS INT) END"
+
+  # ---------------------------------------------------------------------------
+# Month-wise scalar DUAL indicators
+# ---------------------------------------------------------------------------
+
+  - dual_01:
+      type: VARCHAR
+      description: "Dual eligibility indicator for January"
+      source:
+        - DUAL_01
+        - dual_01
+        - dual01
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_02:
+      type: VARCHAR
+      description: "Dual eligibility indicator for February"
+      source:
+        - DUAL_02
+        - dual_02
+        - dual02
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_03:
+      type: VARCHAR
+      description: "Dual eligibility indicator for March"
+      source:
+        - DUAL_03
+        - dual_03
+        - dual03
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_04:
+      type: VARCHAR
+      description: "Dual eligibility indicator for April"
+      source:
+        - DUAL_04
+        - dual_04
+        - dual04
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_05:
+      type: VARCHAR
+      description: "Dual eligibility indicator for May"
+      source:
+        - DUAL_05
+        - dual_05
+        - dual05
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_06:
+      type: VARCHAR
+      description: "Dual eligibility indicator for June"
+      source:
+        - DUAL_06
+        - dual_06
+        - dual06
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_07:
+      type: VARCHAR
+      description: "Dual eligibility indicator for July"
+      source:
+        - DUAL_07
+        - dual_07
+        - dual07
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_08:
+      type: VARCHAR
+      description: "Dual eligibility indicator for August"
+      source:
+        - DUAL_08
+        - dual_08
+        - dual08
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_09:
+      type: VARCHAR
+      description: "Dual eligibility indicator for September"
+      source:
+        - DUAL_09
+        - dual_09
+        - dual09
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_10:
+      type: VARCHAR
+      description: "Dual eligibility indicator for October"
+      source:
+        - DUAL_10
+        - dual_10
+        - dual10
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_11:
+      type: VARCHAR
+      description: "Dual eligibility indicator for November"
+      source:
+        - DUAL_11
+        - dual_11
+        - dual11
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_12:
+      type: VARCHAR
+      description: "Dual eligibility indicator for December"
+      source:
+        - DUAL_12
+        - dual_12
+        - dual12
+      cast:
+        "*": "CAST({column_name} AS VARCHAR)"
+
+  - dual_mo:
+      source: 
+        - dual_mo
+        - DUAL_MO
+        - DUAL_ELGBL_MOS_NUM
+      type: INT
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+ 
+  - orec:
+      type: INT
+      description: "The original entitlement reason code"
+      source:
+        - orec
+        - orig_ent
+        - bene_entlmt_rsn_orig
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+  - curec:
+      type: INT
+      optional: true
+      source:
+        - cur_ent
+        - bene_entlmt_rsn_curr
+        - crec
+
+      cast:
+        "*": "TRY_CAST({column_name} AS INT)"
+
+pre_join:
+  - name: mbsf_d
+    path: "{basepath}/{year}/mbsf_d*/part-*.parquet"
+    min_year: 2011
+    max_year: 2014
+    how: left
+    "on":
+      BENE_ID: BENE_ID     
+      RFRNC_YR: RFRNC_YR
+    columns:
+      - DUAL_MO
+      - DUAL_01
+      - DUAL_02
+      - DUAL_03
+      - DUAL_04
+      - DUAL_05
+      - DUAL_06
+      - DUAL_07
+      - DUAL_08
+      - DUAL_09
+      - DUAL_10
+      - DUAL_11
+      - DUAL_12
+
+## implement bene_id crosswalk for datasets from year 2000-2006 
+
+crosswalks:
+  - name: bene_xwalk
+    path: "{crosswalks_path}/bene_xwalk.parquet"
+    min_year: 2000
+    max_year: 2006
+    format: parquet
+    join:
+      how: left
+      "on":
+        bene_id: bid
+    select:
+      exclude_base:
+        - bene_id
+      coalesce:
+        bene_id:
+          - cw_bene_xwalk.bene_id
+          - base.bene_id
