@@ -1,0 +1,469 @@
+table_name: mbsf_cc
+description: "Data model for Medicare 27 CCW Chronic Conditions (2000-2016) tables."
+
+path_pattern: 
+  - "{basepath}/{year}/mbsf_cc_*/part-*.parquet"
+
+columns: 
+  - bene_id:
+      source: bene_id
+      type: VARCHAR
+      cast:
+        '*': "{column_name}::VARCHAR"
+  - year:
+      source: 
+        - rfrnc_yr 
+      cast:
+        '*': "{column_name}::INT"
+  - enrol_src:
+      source: enrl_src 
+      type: VARCHAR
+      cast:
+        '*': "{column_name}::VARCHAR"
+  - ami: 
+      source: ami 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - ami_mid: 
+      source: amim 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - ami_ever: 
+      source: 
+        - amie 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - alzh: 
+      source: alzh
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - alzh_mid: 
+      source: alzhm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - alzh_ever: 
+      source: 
+        - alzhe 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - alzh_demen: 
+      source: alzhdmta 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - alzh_demen_mid: 
+      source: alzhdmtm
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - alzh_demen_ever: 
+      source: 
+        - alzhdmte
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - atrial_fib: 
+      source: 
+        - atrialfb 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - atrial_fib_mid: 
+      source: atrialfm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - atrial_fib_ever: 
+      source: 
+        - atrialfe 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - cataract: 
+      source: cataract 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - cataract_mid: 
+      source: catarctm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - cataract_ever: 
+      source: 
+        - catarcte 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - chronic_kidney: 
+      source: 
+        - chrnkidn 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - chronic_kidney_mid: 
+      source: chrnkdnm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - chronic_kidney_ever: 
+      source: 
+        - chrnkdne 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - copd: 
+      source: copd
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - copd_mid: 
+      source: copdm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - copd_ever: 
+      source: 
+        - copde 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - heart_failure: 
+      source: 
+        - chf 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - heart_failure_mid: 
+      source: chfm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - heart_failure_ever: 
+      source: 
+        - chfe 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - diabetes: 
+      source: diabetes 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - diabetes_mid: 
+      source: diabtesm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - diabetes_ever: 
+      source: 
+        - diabtese 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - glaucoma: 
+      source: glaucoma
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - glaucoma_mid: 
+      source: glaucmam 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - glaucoma_ever: 
+      source: 
+        - glaucmae 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - hip_fracture: 
+      source: 
+        - hipfrac 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - hip_fracture_mid: 
+      source: hipfracm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - hip_fracture_ever: 
+      source: 
+        - hipfrace 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - ischemic_heart: 
+      source: 
+        - ischmcht 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - ischemic_heart_mid: 
+      source: ischmchm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - ischemic_heart_ever: 
+      source: 
+        - ischmche 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - depression: 
+      source: 
+        - depressn 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - depression_mid: 
+      source: deprssnm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - depression_ever: 
+      source: 
+        - deprssne 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - osteoporosis: 
+      source: 
+        - osteoprs 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - osteoporosis_mid: 
+      source: osteoprm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - osteoporosis_ever: 
+      source: 
+        - osteopre 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - rheu_oste_arth: 
+      source: ra_oa 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - rheu_oste_arth_mid: 
+      source: ra_oa_m 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - rheu_oste_arth_ever: 
+      source: 
+        - ra_oa_e 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - stroke_tia: 
+      source: 
+        - strketia 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - stroke_tia_mid: 
+      source: strktiam 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - stroke_tia_ever: 
+      source: 
+        - strktiae 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - cancer_breast: 
+      source: 
+        - cncrbrst 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_breast_mid: 
+      source: cncrbrsm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_breast_ever: 
+      source: 
+        - cncrbrse 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - cancer_colorectal: 
+      source: 
+        - cncrclrc 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_colorectal_mid: 
+      source: cncrclrm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_colorectal_ever: 
+      source: 
+        - cncrclre 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - cancer_prostate: 
+      source: 
+        - cncrprst 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_prostate_mid: 
+      source: cncrprsm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_prostate_ever: 
+      source: 
+        - cncrprse 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - cancer_lung: 
+      source: 
+        - cncrlung 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_lung_mid: 
+      source: cncrlngm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_lung_ever: 
+      source: 
+        - cncrlnge 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - cancer_endometrial: 
+      source: 
+        - cncrendm 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_endometrial_mid: 
+      source: cncendmm 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - cancer_endometrial_ever: 
+      source: 
+        - cncendme 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - anemia: 
+      source: anemia
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - anemia_mid: 
+      source: anemia_mid 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - anemia_ever: 
+      source: anemia_ever
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - asthma: 
+      source: asthma
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - asthma_mid: 
+      source: asthma_mid 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - asthma_ever: 
+      source: asthma_ever
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - hyperlipidemia: 
+      source: 
+        - hyperl 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - hyperlipidemia_mid: 
+      source: hyperl_mid 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - hyperlipidemia_ever: 
+      source: 
+        - hyperl_ever
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - benign_prostatic_hyperplasia: 
+      source: 
+        - hyperp 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - benign_prostatic_hyperplasia_mid: 
+      source: hyperp_mid 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - benign_prostatic_hyperplasia_ever: 
+      source: 
+        - hyperp_ever 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - hypertension: 
+      source: 
+        - hypert 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - hypertension_mid: 
+      source: hypert_mid 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - hypertension_ever: 
+      source: 
+        - hypert_ever 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"
+  - hypo_thyroid: 
+      source: 
+        - hypoth 
+      type: DOUBLE 
+      cast:
+        '*': "{column_name}::INT"
+  - hypo_thyroid_mid: 
+      source: hypoth_mid 
+      type: DOUBLE
+      cast:
+        '*': "{column_name}::INT"
+  - hypo_thyroid_ever: 
+      source: 
+        - hypoth_ever 
+      type: DATE 
+      cast: 
+        '*': "CASE WHEN {column_name} IS NULL THEN NULL ELSE {column_name}::DATE END"

@@ -1,0 +1,447 @@
+table_name : mds
+description: Core resident demographic and identity information from MDS assessments.
+
+path_pattern: 
+   - "{basepath}/{year}/mds_asmt_*/part-*.parquet"
+    
+columns:
+  #beneficiaries characteristics 
+  - bene_id:
+      source: BENE_ID
+      type: VARCHAR
+      description: "Encrypted CCW beneficiary identifier; unique across CMS datasets."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - age:
+      source: C_RSDNT_AGE_NUM
+      type: INTEGER
+      description: "System-calculated resident age at assessment."
+      cast:
+        "*": "TRY_CAST({column_name} AS INTEGER)"
+
+  - sex:
+      source: A0800_GNDR_CD
+      type: VARCHAR
+      description: "Resident's sex."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - birth_date:
+      source: A0900_BIRTH_DT
+      type: DATE
+      description: "Resident's date of birth."
+      cast:
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - race_american_indian:
+      source: A1000A_AMRCN_INDN_AK_NTV_CD
+      type: VARCHAR
+      description: "Race/Ethnicity: American Indian or Alaskan Native."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - race_asian:
+      source: A1000B_ASN_CD
+      type: VARCHAR
+      description: "Race/Ethnicity: Asian."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - race_african_american:
+      source: A1000C_AFRCN_AMRCN_CD
+      type: VARCHAR
+      description: "Race/Ethnicity: African American."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - race_hispanic:
+      source: A1000D_HSPNC_CD
+      type: VARCHAR
+      description: "Race/Ethnicity: Hispanic."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - race_pacific_islander:
+      source: A1000E_NTV_HI_PCFC_ISLNDR_CD
+      type: VARCHAR
+      description: "Race/Ethnicity: Native Hawaiian or Pacific Islander."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - race_white:
+      source: A1000F_WHT_CD
+      type: VARCHAR
+      description: "Race/Ethnicity: White."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+  
+  - year:
+      source: TRGT_DT
+      type: INTEGER
+      description: "Assessment year derived from target_date."
+      cast:
+        "*": "EXTRACT(YEAR FROM {column_name})"
+
+  - asmt_id:
+      source: ASMT_ID
+      type: VARCHAR
+      description: "Encrypted assessment ID."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - target_date:
+      source: TRGT_DT
+      type: DATE
+      description: "Target date of the assessment."
+      cast:
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - assessment_reference_date:
+      source: A2300_ASMT_RFRNC_DT
+      type: DATE
+      description: "Assessment reference date."
+      cast:
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - item_subset_cd:
+      source: MDS_ITM_SBST_CD
+      type: VARCHAR
+      description: "Assessment item subset code."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - record_type:
+      source: A0050_TRANS_TYPE_CD
+      type: VARCHAR
+      description: "Type of record (add, modify, inactivate)."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - correction_status_cd:
+      source: MDS_CRCTN_STUS_CD
+      type: VARCHAR
+      description: "Correction status (C, M, X)."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - federal_obra_reason:
+      source: A0310A_FED_OBRA_CD
+      type: VARCHAR
+      description: "Federal OBRA assessment reason."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - pps_reason:
+      source: A0310B_PPS_CD
+      type: VARCHAR
+      description: "PPS assessment reason."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - first_asmt_since_most_recent_admission:
+      source: A0310E_FIRST_SINCE_ADMSN_CD
+      type: VARCHAR
+      description: "Indicates whether this is the first assessment since the most recent admission."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - entry_discharge_cd:
+      source: A0310F_ENTRY_DSCHRG_CD
+      type: VARCHAR
+      description: "Indicates whether the record is an entry or discharge record."
+      cast:
+         "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - planned_discharge_cd:
+      source: A0310G_PLND_DSCHRG_CD
+      type: VARCHAR
+      description: "Indicates whether the discharge was planned."
+      cast:
+         "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - admission_date:
+      source: A1900_ADMSN_DT
+      type: DATE
+      description: "Date the current episode of care in this facility began."
+      cast:
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - entry_date:
+      source: A1600_ENTRY_DT
+      type: DATE
+      description: "Date of entry or reentry into the facility."
+      cast:
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - entry_type_cd:
+      source: A1700_ENTRY_TYPE_CD
+      type: VARCHAR
+      description: "Type of entry into the facility (admission or reentry)."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+  
+  - entered_from: 
+      source: A1800_ENTRD_FROM_TXT
+      type: VARCHAR
+      description: "Source from which the resident entered the facility."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - discharge_date:
+      source: A2000_DSCHRG_DT
+      type: DATE
+      description: "Date of discharge from the facility."
+      cast:
+        "*": >
+          CASE
+          WHEN {column_name} IS NULL THEN NULL
+          WHEN LENGTH(regexp_replace(CAST({column_name} AS VARCHAR), '[^0-9]', '')) <> 8 THEN NULL
+          ELSE STRPTIME(regexp_replace(CAST({column_name} AS VARCHAR), '[^0-9]', ''), '%Y%m%d')::DATE
+          END
+
+  - discharge_status:
+      source: A2100_DSCHRG_STUS_CD
+      type: VARCHAR
+      description: "Discharge status."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  # facility variables 
+
+  - fac_id:
+      source: FAC_PRVDR_INTRNL_ID
+      type: VARCHAR
+      description: "This column contains the facility internal ID for nursing home facilities or the provider internal number for swing bed providers."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - state:
+      source: state_cd
+      type: VARCHAR
+      description: "This column contains the two-digit state abbreviation code."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - urban_rural_cd:
+      source: C_URBN_RRL_CD
+      type: VARCHAR
+      description: "This data in this column identifies whether the facility is designated to be in a rural or urban area."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - type_of_provider:
+      source: A0200_PRVDR_TYPE_CD
+      type: VARCHAR
+      description: "Type of provider."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  # --- Cognitive and mental health variables ----
+
+  - bims_interview_conducted:
+      source: C0100_CNDCT_MENTL_STUS_CD
+      type: VARCHAR
+      description: "C0100 – Was the Brief Interview for Mental Status conducted?"
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - bims_word_repeat_first_attempt:
+      source: C0200_WORD_RPET_FIRST_ATMPT_CD
+      type: VARCHAR
+      description: "C0200 – Number of words repeated after first attempt."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - bims_orientation_year_correct:
+      source: C0300A_RPT_CRCT_YR_CD
+      type: VARCHAR
+      description: "C0300A – Temporal orientation: reported correct year."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - bims_orientation_month_correct:
+      source: C0300B_RPT_CRCT_MO_CD
+      type: VARCHAR
+      description: "C0300B – Temporal orientation: reported correct month."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - bims_orientation_day_correct:
+      source: C0300C_RPT_CRCT_DAY_CD
+      type: VARCHAR
+      description: "C0300C – Temporal orientation: reported correct day of week."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - recall_sock:
+      source: C0400A_RCALL_FIRST_WORD_CD
+      type: VARCHAR
+      description: "C0400A – Recall word: sock."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - recall_blue:
+      source: C0400B_RCALL_SCND_WORD_CD
+      type: VARCHAR
+      description: "C0400B – Recall word: blue."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - recall_bed:
+      source: C0400C_RCALL_THRD_WORD_CD
+      type: VARCHAR
+      description: "C0400C – Recall word: bed."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - bims_total_score:
+  ## chnage this to an integer/ numeric number 
+      source: C0500_BIMS_SCRE_NUM
+      type: VARCHAR
+      description: "C0500 – Brief Interview for Mental Status (BIMS) total score."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - staff_conducts_bims:
+      source: C0600_CNDCT_STF_MENTL_STUS_CD
+      type: VARCHAR
+      description: "C0600 – Was staff interview conducted for BIMS?"
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - memory_short_term:
+      source: C0700_SHRT_TERM_MEMRY_CD
+      type: VARCHAR
+      description: "C0700 – Staff assessment of short-term memory."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - memory_long_term:
+      source: C0800_LT_MEMRY_CD
+      type: VARCHAR
+      description: "C0800 – Staff assessment of long-term memory."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - staff_recalls_season:
+      source: C0900A_RCALL_CRNT_SEASN_CD
+      type: VARCHAR
+      description: "C0900A – Staff assessment: recalls current season."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - staff_recalls_location:
+      source: C0900B_RCALL_LCTN_ROOM_CD
+      type: VARCHAR
+      description: "C0900B – Staff assessment: recalls location of room."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - staff_recalls_name:
+      source: C0900C_RCALL_STF_NAME_CD
+      type: VARCHAR
+      description: "C0900C – Staff assessment: recalls staff name."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - staff_recalls_facility:
+      source: C0900D_RCALL_NH_CD
+      type: VARCHAR
+      description: "C0900D – Staff assessment: recalls nursing home."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - staff_recalls_none:
+      source: C0900Z_RCALL_NONE_CD
+      type: VARCHAR
+      description: "C0900Z – Staff assessment: recalls none of the above."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - cognitive_decision_making:
+      source: C1000_DCSN_MKNG_CD
+      type: VARCHAR
+      description: "C1000 – Cognitive skills for decision making."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - delirium_inattention:
+      source: C1300A_INATTNTN_CD
+      type: VARCHAR
+      description: "C1300A – Sign/symptom of delirium: inattention."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - delirium_disorganized_thinking:
+      source: C1300B_DISORGNZ_THNKG_CD
+      type: VARCHAR
+      description: "C1300B – Sign/symptom of delirium: disorganized thinking."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - delirium_altered_consciousness:
+      source: C1300C_ALTRD_CONSCS_CD
+      type: VARCHAR
+      description: "C1300C – Sign/symptom of delirium: altered level of consciousness."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - delirium_psychomotor_retardation:
+      source: C1300D_PSYCHMTR_RTRDTN_CD
+      type: VARCHAR
+      description: "C1300D – Sign/symptom of delirium: psychomotor retardation."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - acute_mental_status_change:
+      source: C1600_CHG_MENTL_STUS_CD
+      type: VARCHAR
+      description: "C1600 – Acute onset mental status change."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - dx_dementia:
+      source: I4800_DMNT_CD
+      type: VARCHAR
+      description: "I4800 – Active diagnosis: dementia."
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+
+## adding below the other variables which could be added if needed 
+
+# - marital_status:
+  #     source: A1200_MRTL_STUS_CD
+  #     type: VARCHAR
+  #     description: "Marital status."
+  #     cast:
+  #       "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  # - lifetime_occupation:
+  #     source: A1300D_LFTM_OCPTN_TXT
+  #     type: VARCHAR
+  #     description: "Lifetime occupation(s)."
+  #     cast:
+  #       "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  # - medicare_stay_flag:
+  #     source: A2400A_MDCR_STAY_CD
+  #     type: VARCHAR
+  #     description: "Medicare stay flag."
+  #     cast:
+  #       "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  # - medicare_stay_start:
+  #     source: A2400B_MDCR_STAY_STRT_DT
+  #     type: DATE
+  #     description: "Start date of Medicare stay."
+  #     cast:
+  #       "*": "TRY_CAST({column_name} AS DATE)"
+
+  # - medicare_stay_end:
+  #     source: A2400C_MDCR_STAY_END_DT
+  #     type: DATE
+  #     description: "End date of Medicare stay."
+  #     cast:
+  #       "*": "TRY_CAST({column_name} AS DATE)"

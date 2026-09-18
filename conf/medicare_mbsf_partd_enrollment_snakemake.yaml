@@ -1,0 +1,15 @@
+paths:
+  basepath: "data/medicare_mbsf_partd_enrollment/input"
+  output_path: "data/medicare_mbsf_partd_enrollment/output"
+  crosswalks_path: null
+
+table:
+  - partd_enrollment
+
+tables:
+  partd_enrollment: "conf/datasets/medicare_mbsf/partd_enrollment.yaml"
+
+years:
+  - 2016 
+  - 2017 
+  - 2018 

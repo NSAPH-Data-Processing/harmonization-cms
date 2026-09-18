@@ -1,9 +1,9 @@
 defaults:
   - _self_
-  - datapaths: medicaid_max_red
+  - datapaths: medicare_partd_pde
 
-table: ps
-year: 2012
+table: partd_pde
+year: 2016
 
 paths:
   basepath: "/path/to/raw"
@@ -11,8 +11,7 @@ paths:
   output_path: "output"
 
 tables:
-  ps: "conf/datasets/medicaid_max/ps.yaml"
-  ip: "conf/datasets/medicaid_max/ip.yaml"
+  partd_pde: "conf/datasets/medicare_partd/partd_pde.yaml"
 
 hydra:
   run:

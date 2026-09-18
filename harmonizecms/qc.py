@@ -288,6 +288,13 @@ def run_qc(
             for idx, cw in enumerate(crosswalks):
                 if not isinstance(cw, dict):
                     continue
+                min_year = cw.get("min_year")
+                max_year = cw.get("max_year")
+
+                if min_year is not None and year < int(min_year):
+                    continue
+                if max_year is not None and year > int(max_year):
+                    continue
 
                 cw_name = cw.get("name") or f"crosswalk_{idx+1}"
                 cw_entry: dict[str, Any] = {

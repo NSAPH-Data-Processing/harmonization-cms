@@ -87,7 +87,12 @@ def _construct_array_expr(col_def: dict, schema_lower: dict[str, str], year: int
             return str(element_cast).format(column_name=component_col, year=year)
         return component_col
 
-    return f"ARRAY[{', '.join(elem(c) for c in components_to_use)}]"
+    array_expr = f"ARRAY[{', '.join(elem(c) for c in components_to_use)}]"
+
+    if col_def.get("drop_nulls", False):
+        return f"list_filter({array_expr}, x -> x IS NOT NULL)"
+
+    return array_expr
 
 
 def _escape_sql_string(s: str) -> str:
@@ -120,6 +125,65 @@ def _cw_read_expr(path: str, fmt: str) -> str:
         # read_csv_auto infers schema; good default for simple crosswalks
         return f"read_csv_auto('{p}', all_varchar=true)"
     raise ValueError(f"Unsupported crosswalk format: {fmt!r}. Use parquet or csv.")
+
+
+def apply_pre_joins(
+    conn: duckdb.DuckDBPyConnection,
+    table_cfg: dict,
+    parquet_files: list[str],
+    year: int,
+    basepath: str,
+) -> str:
+    files_str = ", ".join(f"'{_escape_sql_string(f)}'" for f in parquet_files)
+
+    conn.execute(f"""
+        CREATE OR REPLACE TEMP TABLE raw_base AS
+        SELECT *
+        FROM read_parquet([{files_str}], union_by_name=true)
+    """)
+
+    for join_cfg in table_cfg.get("pre_join", []) or []:
+        if year < int(join_cfg.get("min_year", year)):
+            continue
+        if year > int(join_cfg.get("max_year", year)):
+            continue
+
+        join_path = (
+            join_cfg["path"]
+            .replace("{basepath}", basepath)
+            .replace("{year}", str(year))
+        )
+
+        alias = join_cfg["name"]
+        on_map = join_cfg["on"]
+        key_cols = list(on_map.values())
+        extra_cols = join_cfg.get("columns", [])
+        source_cols = key_cols + extra_cols
+        source_select = ", ".join(source_cols)
+
+        extra_select = ""
+        if extra_cols:
+            extra_select = ", " + ", ".join(f"{alias}.{col}" for col in extra_cols)
+
+        on_sql = " AND ".join(
+            f"base.{left_col} = {alias}.{right_col}"
+            for left_col, right_col in on_map.items()
+        )
+
+        conn.execute(f"""
+            CREATE OR REPLACE TEMP TABLE raw_base AS
+            SELECT
+                base.*
+                {extra_select}
+            FROM raw_base AS base
+            {join_cfg.get("how", "left").upper()} JOIN (
+                SELECT {source_select}
+                FROM read_parquet('{join_path}')
+            ) AS {alias}
+            ON {on_sql}
+        """)
+        
+    return "raw_base"
 
 
 def _build_crosswalk_join_sql(
@@ -159,7 +223,25 @@ def construct_query(
       - harmonizing columns (existing behavior)
       - optional crosswalk joins (new behavior)
     """
-    schema_lower = _load_schema_lower(conn, parquet_files[0])
+
+    if table_cfg.get("pre_join"):
+        apply_pre_joins(
+            conn,
+            table_cfg,
+            parquet_files,
+            year,
+            basepath,
+        )
+
+        schema_lower = {
+            row[1].lower(): str(row[2]).upper()
+            for row in conn.execute(
+                "PRAGMA table_info('raw_base')"
+            ).fetchall()
+        }
+    else:
+        schema_lower = _load_schema_lower(conn, parquet_files[0])
+
     select_exprs: list[str] = []
 
     table_name = table_cfg.get("table_name") or table_cfg.get("name")
@@ -183,7 +265,10 @@ def construct_query(
         source = col_def.get("source")
         selected_source = _select_first_existing(schema_lower, source)
         if not selected_source:
-            select_exprs.append(f"NULL AS {col_name}")
+            if col_name == "year":
+                select_exprs.append(f"{year} AS {col_name}")
+            else:
+                select_exprs.append(f"NULL AS {col_name}")
             continue
 
         expr = _cast_expr(selected_source, schema_lower, col_def.get("cast"), year)
@@ -197,6 +282,13 @@ def construct_query(
     # -----------------------
     crosswalks = table_cfg.get("crosswalks") or []
     if not crosswalks:
+        if table_cfg.get("pre_join"):
+            return f"""
+            CREATE OR REPLACE TABLE {table_name} AS
+            SELECT {columns_str}
+            FROM raw_base;
+            """
+
         return f"""
         CREATE OR REPLACE TABLE {table_name} AS
         SELECT {columns_str}
@@ -205,20 +297,57 @@ def construct_query(
 
     # Build CTEs
     ctes: list[str] = []
-    ctes.append(
-        f"""base AS (
-            SELECT {columns_str}
-            FROM read_parquet([{files_str}])
-        )"""
-    )
+
+    if table_cfg.get("pre_join"):
+        ctes.append(
+            f"""base AS (
+                SELECT {columns_str}
+                FROM raw_base
+            )""")
+
+    else:
+        ctes.append(
+            f"""base AS (
+                SELECT {columns_str}
+                FROM read_parquet([{files_str}])
+            )"""
+        )
 
     join_clauses: list[str] = []
-    added_selects: list[str] = ["base.*"]
+
+    exclude_base_cols = []
+    for cw in crosswalks:
+        min_year = cw.get("min_year")
+        max_year = cw.get("max_year")
+
+        if min_year is not None and year < int(min_year):
+            continue
+        if max_year is not None and year > int(max_year):
+            continue
+
+        select_block = cw.get("select") or {}
+        exclude_cols = select_block.get("exclude_base") or []
+        if not isinstance(exclude_cols, list):
+            raise ValueError("select.exclude_base must be a list of original columns to exclude.")
+        exclude_base_cols.extend([str(c) for c in exclude_cols])
+
+    if exclude_base_cols:
+        cols_to_exclude = ", ".join(exclude_base_cols)
+        added_selects: list[str] = [f"base.* EXCLUDE ({cols_to_exclude})"]
+    else:
+        added_selects: list[str] = ["base.*"]
 
     for i, cw in enumerate(crosswalks):
         if not isinstance(cw, dict):
             raise ValueError(f"crosswalks[{i}] must be a mapping/dict.")
+        min_year = cw.get("min_year")
+        max_year = cw.get("max_year")
 
+        if min_year is not None and year < int(min_year):
+            continue
+        if max_year is not None and year > int(max_year):
+            continue
+        
         name = cw.get("name") or f"cw{i+1}"
         cw_alias = f"cw_{name}"
         fmt = cw.get("format", "parquet")
@@ -293,6 +422,29 @@ def construct_query(
 
         for out_col, cw_col in add_map.items():
             added_selects.append(f"{cw_alias}.{cw_col} AS {out_col}")
+        
+        coalesce_map = select_block.get("coalesce") or {}
+        if not isinstance(coalesce_map, dict):
+            raise ValueError(
+                f"crosswalk '{name}': select.coalesce must be a mapping of output_col -> list of expressions."
+            )
+
+        for out_col, exprs in coalesce_map.items():
+            if not isinstance(exprs, list) or len(exprs) < 2:
+                raise ValueError(
+                    f"crosswalk '{name}': select.coalesce.{out_col} must be a list with at least two expressions."
+                )
+
+            resolved_exprs = []
+            for expr in exprs:
+                expr = str(expr)
+                expr = expr.replace("cw.", f"{cw_alias}.")
+                resolved_exprs.append(expr)
+
+            if out_col == "bene_id":
+                added_selects.insert(0, f"COALESCE({', '.join(resolved_exprs)}) AS {out_col}")
+            else:
+                added_selects.append(f"COALESCE({', '.join(resolved_exprs)}) AS {out_col}")
 
         join_clauses.append(f"{how} JOIN {cw_alias} ON {on_sql}")
 
@@ -387,7 +539,13 @@ def harmonize_table_year(
         "table_config_path": table_config_path,
         "basepath": basepath,
         "crosswalks_path": crosswalks_path,
-        "crosswalks": [cw.get("name") for cw in (table_cfg.get("crosswalks") or []) if isinstance(cw, dict)],
+        "crosswalks": [
+        cw.get("name")
+        for cw in (table_cfg.get("crosswalks") or [])
+        if isinstance(cw, dict)
+        and (cw.get("min_year") is None or year >= int(cw.get("min_year")))
+        and (cw.get("max_year") is None or year <= int(cw.get("max_year")))
+        ],
     }
     with open(run_file, "w") as f:
         json.dump(payload, f, indent=2)

@@ -1,0 +1,15 @@
+paths:
+  basepath: "data/medicare_partd_pde/input"
+  output_path: "data/medicare_partd_pde/output"
+  crosswalks_path: null
+
+table:
+  - partd_pde
+
+tables:
+  partd_pde: "conf/datasets/medicare_partd/partd_pde.yaml"
+
+years:
+  - 2016 
+  - 2017 
+  - 2018 

@@ -1,0 +1,7 @@
+name: medicare_medpar
+dirs:
+  input: null
+  crosswalks: 
+    bene_xwalk: null
+  output:
+    ip: null
