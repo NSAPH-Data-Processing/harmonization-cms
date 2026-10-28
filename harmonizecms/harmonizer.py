@@ -4,7 +4,7 @@ import json
 import os
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Iterable, Optional
 
 import duckdb
 import yaml
@@ -17,98 +17,55 @@ def load_yaml(path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def _load_schema_lower(conn: duckdb.DuckDBPyConnection, parquet_file: str) -> dict[str, str]:
-    df = conn.execute(
-        f"DESCRIBE SELECT * FROM read_parquet('{parquet_file}') LIMIT 0"
-    ).fetchdf()
-    return {row["column_name"].lower(): str(row["column_type"]).upper() for _, row in df.iterrows()}
-
-
-def _select_first_existing(schema_lower: dict[str, str], candidates) -> Optional[str]:
-    if candidates is None:
-        return None
-    if isinstance(candidates, str):
-        candidates = [candidates]
-    for c in candidates:
-        if c and c.lower() in schema_lower:
-            return c
-    return None
-
-
-def _cast_expr(
-    selected_source: str,
-    schema_lower: dict[str, str],
-    cast_dict: dict[str, str] | None,
-    year: int,
-) -> str:
-    cast_dict_norm = {str(k).upper(): v for k, v in (cast_dict or {}).items()}
-    src_type = schema_lower.get(selected_source.lower(), "")
-    template = cast_dict_norm.get(src_type) or cast_dict_norm.get("*") or "{column_name}"
-    return template.format(column_name=selected_source, year=year)
-
-
-def _construct_array_expr(col_def: dict, schema_lower: dict[str, str], year: int) -> str:
-    """
-    Array contract:
-      - if any source_array exists -> use that, applying cast dict
-      - else build ARRAY[...] from ONE chosen component schema:
-          * source_component_sets: list of lists; choose first set with any existing col
-          * else fallback to source_components
-      - missing components become NULL (preserves array length)
-    """
-    source_array = col_def.get("source_array") or []
-    source_components = col_def.get("source_components") or []
-    source_component_sets = col_def.get("source_component_sets") or []
-    cast_dict = col_def.get("cast") or {}
-    element_cast = col_def.get("element_cast")
-
-    selected_array = _select_first_existing(schema_lower, source_array)
-    if selected_array:
-        return _cast_expr(selected_array, schema_lower, cast_dict, year)
-
-    components_to_use: list[str] = []
-    if source_component_sets:
-        for candidate_set in source_component_sets:
-            if not isinstance(candidate_set, list):
-                continue
-            if any(c.lower() in schema_lower for c in candidate_set):
-                components_to_use = candidate_set
-                break
-    else:
-        components_to_use = source_components
-
-    if not components_to_use:
-        return "NULL"
-
-    def elem(component_col: str) -> str:
-        if component_col.lower() not in schema_lower:
-            return "NULL"
-        if element_cast:
-            return str(element_cast).format(column_name=component_col, year=year)
-        return component_col
-
-    array_expr = f"ARRAY[{', '.join(elem(c) for c in components_to_use)}]"
-
-    if col_def.get("drop_nulls", False):
-        return f"list_filter({array_expr}, x -> x IS NOT NULL)"
-
-    return array_expr
-
-
 def _escape_sql_string(s: str) -> str:
     # Escape single quotes for safe embedding in SQL string literals
     return s.replace("'", "''")
 
 
-def _resolve_template(path_template: str, *, basepath: str, crosswalks_path: Optional[str], year: int) -> str:
+def _jsonable_basepath(basepath: str | Iterable[str]) -> str | list[str]:
+    if isinstance(basepath, str):
+        return basepath
+    return [str(path) for path in basepath if path]
+
+
+def _normalize_basepaths(basepath: str | Iterable[str]) -> list[str]:
+    if isinstance(basepath, str):
+        return [basepath]
+    return [str(path) for path in basepath if path]
+
+
+def _resolve_single_basepath(basepath: str | Iterable[str]) -> str:
+    if isinstance(basepath, str):
+        return basepath
+    basepaths = [str(path) for path in basepath if path]
+    if len(basepaths) != 1:
+        raise ValueError(
+            "Template resolution with {basepath} requires exactly one basepath. "
+            "When running with multiple basepaths, use {crosswalks_path} for shared lookup roots "
+            "or ensure crosswalk paths are resolvable per branch."
+        )
+    return basepaths[0]
+
+
+def _resolve_template(
+    path_template: str,
+    *,
+    basepath: str | Iterable[str],
+    crosswalks_path: Optional[str],
+    year: int,
+) -> str:
     """
     Resolve {basepath}, {crosswalks_path}, {year} placeholders.
     """
     resolved = str(path_template)
-    resolved = resolved.replace("{basepath}", basepath).replace("{year}", str(year))
+    if "{basepath}" in resolved:
+        resolved = resolved.replace("{basepath}", _resolve_single_basepath(basepath))
+    resolved = resolved.replace("{year}", str(year))
     if "{crosswalks_path}" in resolved:
         if not crosswalks_path:
-            raise ValueError("crosswalks_path is required because {crosswalks_path} is used in a crosswalk path.")
+            raise ValueError(
+                "crosswalks_path is required because {crosswalks_path} is used in a crosswalk path."
+            )
         resolved = resolved.replace("{crosswalks_path}", crosswalks_path)
     return resolved
 
@@ -127,6 +84,140 @@ def _cw_read_expr(path: str, fmt: str) -> str:
     raise ValueError(f"Unsupported crosswalk format: {fmt!r}. Use parquet or csv.")
 
 
+def _load_schema_lower(
+    conn: duckdb.DuckDBPyConnection,
+    parquet_files: list[str],
+) -> dict[str, str]:
+    if not parquet_files:
+        return {}
+
+    files_str = ", ".join([f"'{_escape_sql_string(f)}'" for f in parquet_files])
+    df = conn.execute(
+        f"DESCRIBE SELECT * FROM read_parquet([{files_str}], filename = true) LIMIT 0"
+    ).fetchdf()
+
+    schema = {
+        row["column_name"].lower(): str(row["column_type"]).upper()
+        for _, row in df.iterrows()
+    }
+
+    # YAML-accessible alias for DuckDB's virtual filename column.
+    # This avoids requiring YAML to use `filename`, which may collide with
+    # a physical parquet column named filename.
+    schema["source_filename"] = "VARCHAR"
+
+    return schema
+
+
+def _select_first_existing(schema_lower: dict[str, str], candidates) -> Optional[str]:
+    if candidates is None:
+        return None
+    if isinstance(candidates, str):
+        candidates = [candidates]
+    for c in candidates:
+        if c and c.lower() in schema_lower:
+            return c
+    return None
+
+
+def _sql_column_name(selected_source: str) -> str:
+    """
+    Translate YAML pseudo-columns into SQL column references.
+    """
+    if selected_source.lower() == "source_filename":
+        return "filename"
+    return selected_source
+
+
+def _cast_expr(
+    selected_source: str,
+    schema_lower: dict[str, str],
+    cast_dict: dict[str, str] | None,
+    year: int,
+) -> str:
+    cast_dict_norm = {str(k).upper(): v for k, v in (cast_dict or {}).items()}
+    src_type = schema_lower.get(selected_source.lower(), "")
+    template = cast_dict_norm.get(src_type) or cast_dict_norm.get("*") or "{column_name}"
+
+    sql_column_name = _sql_column_name(selected_source)
+
+    return template.format(column_name=sql_column_name, year=year)
+
+
+def _typed_null(sql_type: Optional[str]) -> str:
+    """
+    NULL literal carrying the declared YAML `type`. A bare NULL is typed as
+    "NULL" by DuckDB and is written to parquet as INTEGER, so a column that is
+    missing in one year would otherwise disagree with the schema of other years.
+    """
+    if not sql_type:
+        return "NULL"
+    return f"CAST(NULL AS {sql_type})"
+
+
+def _array_element_type(sql_type: Optional[str]) -> Optional[str]:
+    if not sql_type:
+        return None
+    sql_type = str(sql_type).strip()
+    if sql_type.endswith("[]"):
+        return sql_type[:-2].strip()
+    return None
+
+
+def _construct_array_expr(col_def: dict, schema_lower: dict[str, str], year: int) -> str:
+    """
+    Array contract:
+      - if any source_array exists -> use that, applying cast dict
+      - else build ARRAY[...] from ONE chosen component schema:
+          * source_component_sets: list of lists; choose first set with any existing col
+          * else fallback to source_components
+      - missing components become NULL (preserves array length)
+      - NULLs are typed from the declared `type` (e.g. VARCHAR[])
+    """
+    source_array = col_def.get("source_array") or []
+    source_components = col_def.get("source_components") or []
+    source_component_sets = col_def.get("source_component_sets") or []
+    cast_dict = col_def.get("cast") or {}
+    element_cast = col_def.get("element_cast")
+    sql_type = col_def.get("type")
+    element_type = _array_element_type(sql_type)
+
+    selected_array = _select_first_existing(schema_lower, source_array)
+    if selected_array:
+        return _cast_expr(selected_array, schema_lower, cast_dict, year)
+
+    components_to_use: list[str] = []
+    if source_component_sets:
+        for candidate_set in source_component_sets:
+            if not isinstance(candidate_set, list):
+                continue
+            if any(c.lower() in schema_lower for c in candidate_set):
+                components_to_use = candidate_set
+                break
+    else:
+        components_to_use = source_components
+
+    if not components_to_use:
+        return _typed_null(sql_type)
+
+    def elem(component_col: str) -> str:
+        if component_col.lower() not in schema_lower:
+            return _typed_null(element_type)
+        sql_column_name = _sql_column_name(component_col)
+        if element_cast:
+            return str(element_cast).format(column_name=sql_column_name, year=year)
+        return sql_column_name
+
+    array_expr = f"ARRAY[{', '.join(elem(c) for c in components_to_use)}]"
+
+    if col_def.get("drop_nulls", False):
+        return f"list_filter({array_expr}, x -> x IS NOT NULL)"
+
+    return array_expr
+
+
+# Note: always writes to the temp table `raw_base`, so a pre_join table supports
+# only one basepath per run (a second branch would overwrite the first).
 def apply_pre_joins(
     conn: duckdb.DuckDBPyConnection,
     table_cfg: dict,
@@ -209,20 +300,54 @@ def _build_crosswalk_join_sql(
     raise RuntimeError("Do not call _build_crosswalk_join_sql directly.")
 
 
-def construct_query(
+def _build_select_exprs(
+    table_cfg: dict,
+    schema_lower: dict[str, str],
+    year: int,
+) -> list[str]:
+    select_exprs: list[str] = []
+
+    for col in table_cfg.get("columns", []):
+        col_name = list(col.keys())[0]
+        col_def = col[col_name] or {}
+        kind = col_def.get("kind", "scalar")
+
+        if kind == "array":
+            expr = _construct_array_expr(col_def, schema_lower, year)
+            select_exprs.append(f"{expr} AS {col_name}")
+            continue
+
+        source = col_def.get("source")
+        selected_source = _select_first_existing(schema_lower, source)
+        if not selected_source:
+            if col_name == "year":
+                select_exprs.append(f"{year} AS {col_name}")
+            else:
+                select_exprs.append(f"{_typed_null(col_def.get('type'))} AS {col_name}")
+            continue
+
+        expr = _cast_expr(selected_source, schema_lower, col_def.get("cast"), year)
+        select_exprs.append(f"{expr} AS {col_name}")
+
+    return select_exprs
+
+
+def _build_branch_sql(
     conn: duckdb.DuckDBPyConnection,
+    *,
+    branch_name: str,
     table_cfg: dict,
     parquet_files: list[str],
     year: int,
-    *,
     basepath: str,
-    crosswalks_path: Optional[str] = None,
+    crosswalks_path: Optional[str],
 ) -> str:
     """
-    Build the DuckDB SQL for:
-      - harmonizing columns (existing behavior)
-      - optional crosswalk joins (new behavior)
+    Build one harmonized SELECT branch for a single basepath.
+    Crosswalks are applied inside the branch.
     """
+    if not parquet_files:
+        raise ValueError(f"Branch '{branch_name}' has no parquet files.")
 
     if table_cfg.get("pre_join"):
         apply_pre_joins(
@@ -240,40 +365,12 @@ def construct_query(
             ).fetchall()
         }
     else:
-        schema_lower = _load_schema_lower(conn, parquet_files[0])
-
-    select_exprs: list[str] = []
-
-    table_name = table_cfg.get("table_name") or table_cfg.get("name")
-    if not table_name:
-        raise ValueError("Per-table YAML must include `table_name`.")
+        schema_lower = _load_schema_lower(conn, parquet_files)
 
     # -----------------------
     # Base SELECT expressions
     # -----------------------
-    for col in table_cfg.get("columns", []):
-        col_name = list(col.keys())[0]
-        col_def = col[col_name] or {}
-
-        kind = col_def.get("kind", "scalar")
-
-        if kind == "array":
-            expr = _construct_array_expr(col_def, schema_lower, year)
-            select_exprs.append(f"{expr} AS {col_name}")
-            continue
-
-        source = col_def.get("source")
-        selected_source = _select_first_existing(schema_lower, source)
-        if not selected_source:
-            if col_name == "year":
-                select_exprs.append(f"{year} AS {col_name}")
-            else:
-                select_exprs.append(f"NULL AS {col_name}")
-            continue
-
-        expr = _cast_expr(selected_source, schema_lower, col_def.get("cast"), year)
-        select_exprs.append(f"{expr} AS {col_name}")
-
+    select_exprs = _build_select_exprs(table_cfg, schema_lower, year)
     columns_str = ", ".join(select_exprs)
     files_str = ", ".join([f"'{_escape_sql_string(f)}'" for f in parquet_files])
 
@@ -284,15 +381,13 @@ def construct_query(
     if not crosswalks:
         if table_cfg.get("pre_join"):
             return f"""
-            CREATE OR REPLACE TABLE {table_name} AS
             SELECT {columns_str}
-            FROM raw_base;
+            FROM raw_base
             """
 
         return f"""
-        CREATE OR REPLACE TABLE {table_name} AS
         SELECT {columns_str}
-        FROM read_parquet([{files_str}]);
+        FROM read_parquet([{files_str}], filename = true)
         """
 
     # Build CTEs
@@ -455,18 +550,59 @@ def construct_query(
     ctes_sql = ",\n        ".join(ctes)
 
     return f"""
-    CREATE OR REPLACE TABLE {table_name} AS
     WITH
         {ctes_sql}
     SELECT
             {final_select}
-    {joined_from};
+    {joined_from}
+    """
+
+
+def construct_query(
+    conn: duckdb.DuckDBPyConnection,
+    table_cfg: dict,
+    parquet_files_by_basepath: list[tuple[str, list[str]]],
+    year: int,
+    *,
+    crosswalks_path: Optional[str] = None,
+) -> str:
+    """
+    Build DuckDB SQL by:
+      - harmonizing each basepath separately
+      - optionally applying crosswalk joins within each branch
+      - UNION ALL BY NAME across branches
+    """
+    table_name = table_cfg.get("table_name") or table_cfg.get("name")
+    if not table_name:
+        raise ValueError("Per-table YAML must include `table_name`.")
+
+    if not parquet_files_by_basepath:
+        raise ValueError("No parquet file groups were provided.")
+
+    branch_sqls: list[str] = []
+    for i, (bp, parquet_files) in enumerate(parquet_files_by_basepath, start=1):
+        branch_sql = _build_branch_sql(
+            conn,
+            branch_name=f"branch_{i}",
+            table_cfg=table_cfg,
+            parquet_files=parquet_files,
+            year=year,
+            basepath=bp,
+            crosswalks_path=crosswalks_path,
+        )
+        branch_sqls.append(f"(\n{branch_sql}\n)")
+
+    union_sql = "\nUNION ALL BY NAME\n".join(branch_sqls)
+
+    return f"""
+    CREATE OR REPLACE TABLE {table_name} AS
+    {union_sql};
     """
 
 
 def harmonize_table_year(
     table_config_path: str,
-    basepath: str,
+    basepath: str | Iterable[str],
     output_path: str,
     year: int,
     *,
@@ -488,13 +624,24 @@ def harmonize_table_year(
     if isinstance(path_patterns, str):
         path_patterns = [path_patterns]
 
-    parquet_files = get_parquet_files(basepath=basepath, year=year, path_patterns=path_patterns)
     table_name = table_cfg.get("table_name")
+    if not table_name:
+        raise ValueError("Per-table YAML must include `table_name`.")
 
     os.makedirs(output_path, exist_ok=True)
     run_file = os.path.join(output_path, f"{table_name}_{year}.run.json")
 
-    if not parquet_files:
+    basepaths = _normalize_basepaths(basepath)
+
+    parquet_files_by_basepath: list[tuple[str, list[str]]] = []
+    for bp in basepaths:
+        files = get_parquet_files(basepath=bp, year=year, path_patterns=path_patterns)
+        if files:
+            parquet_files_by_basepath.append((bp, files))
+
+    n_input_files = sum(len(files) for _, files in parquet_files_by_basepath)
+
+    if not parquet_files_by_basepath:
         payload = {
             "status": "error",
             "table": table_name,
@@ -504,7 +651,7 @@ def harmonize_table_year(
             "n_input_files": 0,
             "output_file": None,
             "table_config_path": table_config_path,
-            "basepath": basepath,
+            "basepath": _jsonable_basepath(basepath),
             "crosswalks_path": crosswalks_path,
             "error": f"No parquet parts found using patterns={path_patterns}",
         }
@@ -517,15 +664,14 @@ def harmonize_table_year(
     query = construct_query(
         conn,
         table_cfg,
-        parquet_files,
+        parquet_files_by_basepath,
         year,
-        basepath=basepath,
         crosswalks_path=crosswalks_path,
     )
     conn.execute(query)
 
     out_file = os.path.join(output_path, f"{table_name}_{year}.parquet")
-    conn.execute(f"COPY (SELECT * FROM {table_name}) TO '{out_file}' (FORMAT 'parquet')")
+    conn.execute(f"COPY (SELECT * FROM {table_name}) TO '{_escape_sql_string(out_file)}' (FORMAT 'parquet')")
     conn.close()
 
     payload = {
@@ -534,10 +680,12 @@ def harmonize_table_year(
         "year": year,
         "started_utc": started_utc,
         "duration_sec": time.perf_counter() - t0,
-        "n_input_files": len(parquet_files),
+        "n_input_files": n_input_files,
+        "n_input_branches": len(parquet_files_by_basepath),
+        "input_basepaths_used": [bp for bp, _ in parquet_files_by_basepath],
         "output_file": out_file,
         "table_config_path": table_config_path,
-        "basepath": basepath,
+        "basepath": _jsonable_basepath(basepath),
         "crosswalks_path": crosswalks_path,
         "crosswalks": [
         cw.get("name")
