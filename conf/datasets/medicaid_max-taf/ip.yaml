@@ -1,16 +1,37 @@
 table_name: ip
 description: >-
-  Harmonization rules for Medicaid MAX-TAF inpatient (ip) files.
-
-  Row unit differs by source: a MAX row is a hospital STAY (CMS combined interim claims with the
-  same MSIS ID and billing provider and contiguous/overlapping dates into one stay record, summing
-  payment and covered days), while a TAF row is a single final-action CLAIM (IP header), so one
-  hospital stay can span several TAF rows. Stay counts, length of stay and per-stay payments are
-  not comparable across MAX and TAF until TAF claims are combined into stays downstream (see docs/max-taf/ip/findings/stay_rollup.md).
+  Medicaid MAX-TAF inpatient (IP) files. A MAX row is a hospital stay (CMS already combined its
+  claims); a TAF row is one claim. The `rollup` block combines TAF claims into MAX-style stays
+  (in progress). Decisions: docs/max-taf/ip/decisions.md.
 
 path_pattern:
   - "{basepath}/{year}/taf_inpatient_header_res000017155_req013731/part-*.parquet"
   - "{basepath}/{year}/maxdata_*_ip/part-*.parquet"
+
+# TAF claims -> stays (harmonizecms/stays.py). Built in steps; not hooked into the harmonizer yet.
+rollup:
+  rows: "source_type = 'taf'"
+  filters:
+    # Service tracking claims: not in MAX (IP-R08). NULL claim type is kept.
+    - "claim_type_cd IS NULL OR claim_type_cd NOT IN ('4', 'D', 'X')"
+    # Illinois provider lump sums (IP-R11)
+    - "state IS DISTINCT FROM 'IL' OR claim_type_cd IS DISTINCT FROM 'Y'"
+  # Illinois sends adjustments as extra records; each family is netted into one claim
+  # (IP-R11, IP-R43; rules in docs/max-taf/ip/findings/illinois.md).
+  claim_families:
+    rows: "state = 'IL'"
+    key: [state, msis_id, billing_provider_id, claim_num_orig]
+    original: "claim_num_adj IS NULL"  # sorts first
+    order: "adjudication_date NULLS LAST, claim_id"  # then by this
+    amount_fallbacks:
+      mdcd_pymt_amt: srvc_trkng_pymt_amt  # used when the payment is 0 or NULL
+  family_columns: [claim_num_orig, claim_num_adj, adjudication_date, srvc_trkng_pymt_amt]  # dropped after netting
+  final_action_filters:
+    # MAX drops FFS claims paid $0 unless Medicare or TPL paid something (IP-R12, IP-R20)
+    - >-
+      NOT COALESCE(claim_type_cd IN ('1', 'A') AND mdcd_pymt_amt = 0
+        AND NOT (COALESCE(mdcr_coinsur_pymt_amt, 0) > 0 OR COALESCE(mdcr_ded_pymt_amt, 0) > 0
+                 OR COALESCE(tp_pymt_amt, 0) > 0), FALSE)
 
 columns:
   - bene_id:
@@ -20,14 +41,14 @@ columns:
       cast:
         "*": "TRY_CAST({column_name} AS VARCHAR)"
   - msis_id:
-      description: state assigned unique identifier, CHAR(20) in MAX, CHAR(32) in TAF
+      description: State-assigned person ID; unique only within a state.
       source:
         - MSIS_ID
       type: VARCHAR
       cast:
         "*": "TRY_CAST({column_name} AS VARCHAR)"
   - claim_id:
-      description: raw source claim identifier. Present in TAF and useful for linking claim header and line records. Not available in MAX inpatient files because MAX inpatient records are already combined stay-level records, so this field is null for MAX.
+      description: TAF claim ID. NULL for MAX (rows are already stays).
       source:
         - CLM_ID
       type: VARCHAR
@@ -36,12 +57,8 @@ columns:
 
   - year:
       description: >-
-        Year of file, derived from filename (extract/processing year).
-
-        TODO: for admissions/claims files, this should be re-derived as the
-        year of admission (or year of service) instead of the file's folder
-        year -- a claim admitted late in one calendar year can land in the
-        next year's extract file. Not yet implemented.
+        File year, from the path. A late-December stay can sit in the next year's file. For TAF
+        stays the rollup will set it to the discharge year (IP-R05).
       source:
         - source_filename
       type: INT
@@ -65,7 +82,7 @@ columns:
             ELSE NULL
           END
   - state:
-      description: US Postal Service 2 Character abbreviaiton for the state medicaid agency submitting the data
+      description: Two-letter postal code of the submitting state.
       source:
         - STATE_CD
         - STATE
@@ -80,34 +97,25 @@ columns:
       cast:
         "*": "TRY_CAST({column_name} AS DATE)"
   - srvc_bgn_dt:
-      description: beginning date of service covered by the claim, this may or may not be the admission date
+      description: First service date; not always the admission date.
       source:
-        - SRVC_BGN_DT # this date may or may not be the admission date
+        - SRVC_BGN_DT
         - DT_BEG
       type: DATE
       cast:
         "*": "TRY_CAST({column_name} AS DATE)"
   - srvc_end_dt:
-      description: latest date of service for any claim related to the hospital stay. This may or may not be the discharge date. This element is best used together with patient status code.
+      description: Last service date; not always the discharge date (read with patient_status_cd).
       source:
-        - SRVC_END_DT # this date may or may not be the discharge date
+        - SRVC_END_DT
         - DT_DSCH
       type: DATE
       cast:
         "*": "TRY_CAST({column_name} AS DATE)"
   - patient_status_cd:
       description: >-
-        Code indicating the patient's discharge status. NUBC-standard
-        2-digit code, same value set on both MAX (PATIENT_STATUS_CD) and
-        TAF (PTNT_DSCHRG_STUS_CD), so no source_type-specific recoding is
-        needed. Source values are defensively cleaned: some upstream
-        parquet extracts store this column as a numeric/DOUBLE type rather
-        than a zero-padded 2-digit string, which renders with a trailing
-        decimal when cast to VARCHAR (e.g. 1 becomes "1.0"); that decimal
-        suffix is stripped, then the value is zero-padded back to 2 digits
-        so codes 01-09 (including the common "01 = discharged to home/self
-        care" code) don't lose their leading zero. MAX code 99 (unknown) is a
-        MAX-only placeholder, not an NUBC code, and is mapped to NULL.
+        Discharge status (NUBC 2-digit code, same in MAX and TAF). Numeric reads are cleaned
+        ("1.0" -> "01"). MAX 99 (unknown) -> NULL.
       source:
         - PATIENT_STATUS_CD
         - PTNT_DSCHRG_STUS_CD
@@ -122,32 +130,10 @@ columns:
           END
   - claim_type_cd:
       description: >-
-        Code indicating what kind of payment is covered by this claim (FFS,
-        capitated payment, managed care encounter, service tracking claim,
-        or supplemental payment; separately coded for regular Medicaid vs.
-        separate/Title XXI CHIP). MAX's TYPE_CLM_CD (codes 1-5, 9, A-E) and
-        TAF's CLM_TYPE_CD (same codes 1-5, A-E, plus additional TAF-only
-        codes U/V/W/X/Y for "Other" non-Medicaid/non-CHIP claims) use
-        directly matching codes and meanings for every code MAX has, so
-        this is a straight passthrough with no source_type-specific
-        recoding. TAF's extra U/V/W/X/Y codes simply pass through as-is;
-        they will never appear in MAX-sourced rows. MAX code 9 (unknown) is a
-        MAX-only placeholder and is mapped to NULL.
-
-        MAX/TAF claim-inclusion asymmetry -- filter at the materialization
-        stage, not here: MAX permanently excludes "service tracking claims"
-        (code 4/D) from every file, every year (MAX's own IP record
-        description states these "ARE EXCLUDED FROM ALL MAX FILES"). TAF
-        only began excluding the equivalent codes (4, D, X) from its RIFs
-        as of August 2021 -- TAF RIFs before that date exclude them the same
-        way MAX does, but RIFs from August 2021 onward include them. A
-        MAX-to-TAF longitudinal claim/stay count, or any TAF-only series
-        spanning that cutoff, will show an artificial jump if this isn't
-        accounted for. This harmonization layer has no row-filtering
-        mechanism (only column-level source/cast), so this is intentionally
-        left to whoever materializes/consumes this table: filter
-        `claim_type_cd NOT IN ('4', 'D', 'X')` for MAX-comparable inclusion
-        across the full time series.
+        Payment type: 1/A FFS, 2/B capitation, 3/C encounter, 4/D service tracking,
+        5/E supplemental (letters = separate CHIP). Codes match across MAX and TAF; TAF also has
+        U/V/W/X/Y (neither Medicaid nor CHIP). MAX 9 (unknown) -> NULL. MAX excludes service
+        tracking claims; TAF RIFs include 4/D/X from Aug 2021, and the rollup drops them (IP-R08).
       source:
         - TYPE_CLM_CD
         - CLM_TYPE_CD
@@ -162,17 +148,8 @@ columns:
           END
   - adjustment_cd:
       description: >-
-        Harmonized adjustment status. MAX describes the set of claims combined into the stay
-        (ADJUST_CD 0 = all originals, 1 = originals plus adjustments combined successfully,
-        2 = no original claim found, adjustment could not be completed); TAF describes this
-        final-action claim (ADJUST_CD 0 = original, 1 = void, 2 = re-submittal, 3 = credit
-        adjustment, 4 = replacement, 5 = gross credit, 6 = gross debit).
-
-        Codebook:
-          0 = original only, no adjustment (MAX 0, TAF 0)
-          1 = adjusted (MAX 1, TAF 2-6)
-          2 = adjustment incomplete, no original claim found; stay record may be incomplete (MAX only)
-          NULL = TAF 1 (void; should not appear in final-action TAF files) / missing source value / unrecognized value
+        0 = original only; 1 = adjusted (MAX 1, TAF 2-6); 2 = MAX only, no original found, stay
+        may be incomplete; NULL = TAF void (1), missing or other.
       source:
         - ADJUSTMENT_CODE
         - ADJUST_CD
@@ -189,9 +166,8 @@ columns:
           END
   - primary_diagnosis:
       description: >-
-        Principal diagnosis code (same as diagnoses[1]). Cleaned: spaces and periods removed,
-        uppercased, blank -> NULL. MAX codes may still carry state-reported right zero-padding
-        (e.g. 40100 for 4010), which can only be corrected against an ICD-9-CM code list.
+        Principal diagnosis (= diagnoses[1]). Uppercased, spaces and periods removed. Some MAX
+        ICD-9 codes keep state zero-padding (40100 for 4010).
       source:
         - DGNS_CD_1
         - DIAG_CD_1
@@ -203,14 +179,8 @@ columns:
       kind: array
       type: "VARCHAR[]"
       description: >-
-        Diagnosis codes. 9 elements for MAX files, 12 elements for TAF files. Cleaned: spaces and
-        periods removed, uppercased, blank -> NULL. MAX codes may still carry state-reported right
-        zero-padding (e.g. 40100 for 4010), which can only be corrected against an ICD-9-CM code
-        list.
-
-        Comparability: TAF has 12 diagnosis positions vs 9 in MAX, so comorbidity counts and
-        "any diagnosis of X" rates are mechanically higher in TAF. For MAX-vs-TAF comparisons,
-        use only the first 9 TAF positions (diagnoses[1:9]).
+        Diagnosis codes, cleaned like primary_diagnosis. MAX has 9 positions, TAF 12; use
+        diagnoses[1:9] when comparing the two.
       source_component_sets:
         - [DIAG_CD_1, DIAG_CD_2, DIAG_CD_3, DIAG_CD_4, DIAG_CD_5, DIAG_CD_6, DIAG_CD_7, DIAG_CD_8, DIAG_CD_9]
         - [DGNS_CD_1, DGNS_CD_2, DGNS_CD_3, DGNS_CD_4, DGNS_CD_5, DGNS_CD_6, DGNS_CD_7, DGNS_CD_8, DGNS_CD_9, DGNS_CD_10, DGNS_CD_11, DGNS_CD_12]
@@ -221,14 +191,7 @@ columns:
   - diagnosis_version_cds:
       kind: array
       type: "VARCHAR[]"
-      description: >-
-        Coding system version (ICD-9 vs ICD-10) for each diagnosis code in the `diagnoses`
-        array, one flag per position -- diagnosis_version_cds[i] describes the code at
-        diagnoses[i]. MAX source is DIAG_CD_FLG_1..DIAG_CD_FLG_9 (9 elements, matching
-        diagnoses' own MAX element count); TAF source is DGNS_VRSN_CD_1..DGNS_VRSN_CD_12 (12
-        elements, matching diagnoses' own TAF element count).
-
-        Codebook: 9 = ICD-9, 10 = ICD-10, NULL = missing, other, or invalid.
+      description: ICD version of diagnoses[i] ('9' or '10'); NULL if missing or invalid.
       source_component_sets:
         - [DIAG_CD_FLG_1, DIAG_CD_FLG_2, DIAG_CD_FLG_3, DIAG_CD_FLG_4, DIAG_CD_FLG_5, DIAG_CD_FLG_6, DIAG_CD_FLG_7, DIAG_CD_FLG_8, DIAG_CD_FLG_9]
         - [DGNS_VRSN_CD_1, DGNS_VRSN_CD_2, DGNS_VRSN_CD_3, DGNS_VRSN_CD_4, DGNS_VRSN_CD_5, DGNS_VRSN_CD_6, DGNS_VRSN_CD_7, DGNS_VRSN_CD_8, DGNS_VRSN_CD_9, DGNS_VRSN_CD_10, DGNS_VRSN_CD_11, DGNS_VRSN_CD_12]
@@ -247,10 +210,7 @@ columns:
   - procedures:
       kind: array
       type: "VARCHAR[]"
-      description: >-
-        Procedure codes (6 elements; PRCDR_CD_1..PRCDR_CD_6). Cleaned: spaces and periods
-        removed, uppercased, blank -> NULL. Coding system per position is in
-        procedure_coding_system.
+      description: Procedure codes (6 positions), cleaned like diagnoses.
       source_component_sets:
         - [PRCDR_CD_1, PRCDR_CD_2, PRCDR_CD_3, PRCDR_CD_4, PRCDR_CD_5, PRCDR_CD_6]
         - [PROC1, PROC2, PROC3, PROC4, PROC5, PROC6]
@@ -261,20 +221,8 @@ columns:
       kind: array
       type: "VARCHAR[]"
       description: >-
-        Coding system/nomenclature used for each procedure code in the
-        `procedures` array (6 elements, same position-for-position
-        correspondence: procedure_coding_system[i] describes procedures[i]).
-        Same source variable name AND same value codes on both MAX and TAF
-        (confirmed both use PRCDR_CD_SYS_1..PRCDR_CD_SYS_6 with identical
-        meanings), so no source_type-specific recoding is needed, matching
-        how `procedures` itself needs only one shared source set.
-
-        Codes: 01 = CPT-4, 02 = ICD-9-CM, 06 = HCPCS (national and
-        regional), 07 = ICD-10-CM/PCS (implemented 10/1/2015), 10-87 =
-        other systems. Values are kept as reported (both sources share this
-        scheme), cleaned to a 2-digit code (spaces and any ".0" removed,
-        zero-padded, e.g. "2" -> "02"). MAX-only placeholders 88 (not
-        applicable) and 99 (unknown) are mapped to NULL.
+        Coding system of procedures[i], 2 digits: 01 CPT-4, 02 ICD-9-CM, 06 HCPCS,
+        07 ICD-10-PCS, 10-87 other. MAX 88 and 99 -> NULL.
       source_component_sets:
         - [PRCDR_CD_SYS_1, PRCDR_CD_SYS_2, PRCDR_CD_SYS_3, PRCDR_CD_SYS_4, PRCDR_CD_SYS_5, PRCDR_CD_SYS_6]
         - [PROCIND1, PROCIND2, PROCIND3, PROCIND4, PROCIND5, PROCIND6]
@@ -288,12 +236,8 @@ columns:
         "*": "{column_name}"
   - mdcd_cvrd_days:
       description: >-
-        Number of inpatient days covered by Medicaid on this record (MAX: summed
-        over the combined stay; TAF: this claim). MAX recodes this to 0 when the
-        stay includes a Medicare crossover claim (Medicare paid; Medicaid covered
-        only cost-sharing) and caps it at 365; TAF applies neither rule. So for
-        dual-eligible stays a MAX 0 does not mean no days, and MAX and TAF values
-        are not directly comparable for crossover stays.
+        Medicaid-covered days. MAX sets 0 for stays with a Medicare crossover claim and caps at
+        365; the rollup will do the same for TAF stays (IP-R29).
       source:
         - MDCD_CVRD_IP_DAYS
         - CVRD_DAYS
@@ -303,30 +247,8 @@ columns:
         "*": "TRY_CAST({column_name} AS INT)"
   - mdcd_pymt_amt:
       description: >-
-        Total amount paid by Medicaid (or the managed care plan) on this
-        claim, at the header claim level.
-
-        Redaction caveat: for TAF, this field is NOT available for managed
-        care encounter claims (claim_type_cd = '3', 'C', or 'W') -- CMS
-        requires redaction of payment fields on encounter claims due to
-        their proprietary/confidential nature. A NULL value on an encounter
-        claim does NOT mean no payment occurred; capitated payments happen
-        outside the FFS claim-payment mechanism entirely, at the plan
-        level, not the claim level. Summing this field to estimate total
-        Medicaid spending will undercount for any state/year with
-        significant managed care penetration unless encounter claims
-        (claim_type_cd IN ('3','C','W')) are excluded or handled
-        separately.
-
-        MAX vs TAF on encounters: MAX sets this field to $0 (not NULL) on
-        encounter records (claim_type_cd '3'/'C'), because the Medicaid
-        payment is captured in separate capitation records; TAF leaves it
-        NULL (redacted). So "no amount available" is 0 in MAX and NULL in
-        TAF. Treat MAX encounter $0 as missing, not as a true $0 payment.
-
-        Amounts can be negative (credits/adjustments; the TAF codebook says "may be
-        negative", and MAX allows negative FFS amounts in some states). Do not
-        drop negatives or treat them as errors when summing.
+        Medicaid (or plan) payment. Encounters (3/C/W): TAF redacts it (NULL), MAX reports $0;
+        neither means no payment. Can be negative.
       source:
         - MDCD_PD_AMT
         - MDCD_PYMT_AMT
@@ -336,23 +258,8 @@ columns:
         "*": "TRY_CAST({column_name} AS DOUBLE)"
   - tp_pymt_amt:
       description: >-
-        Total Third-Party Liability (TPL) amount paid on this claim --
-        i.e. the amount paid by another legally-obligated third party
-        (e.g. private insurance) toward the cost of care, not paid by
-        Medicaid. Confirmed real, distinct names on both sides: MAX
-        TP_PYMT_AMT, TAF TP_PD_AMT. Unlike mdcd_pymt_amt, TAF's own
-        documentation for this field does not mention the managed-care
-        redaction caveat.
-
-        Reporting quality varies by state: states collect third-party liability
-        differently (before vs. after paying the claim), and the MAX dictionary
-        notes "the extent to which TPL collections are accurately reported in
-        MSIS is unknown." Treat this as a lower bound. Confirmed not in CCW's
-        list of managed-care redacted fields (TAF RIF User Guide, Appendix C).
-
-        Amounts can be negative (credits/adjustments; the TAF codebook says "may be
-        negative", and MAX allows negative FFS amounts in some states). Do not
-        drop negatives or treat them as errors when summing.
+        Third-party liability paid (e.g. private insurance). Under-reported in some states; treat
+        as a lower bound. Not redacted on encounters. Can be negative.
       source:
         - TP_PYMT_AMT
         - TP_PD_AMT
@@ -361,22 +268,7 @@ columns:
       cast:
         "*": "TRY_CAST({column_name} AS DOUBLE)"
   - mdcr_coinsur_pymt_amt:
-      description: >-
-        Amount paid by Medicaid/CHIP (or the managed care plan) toward the
-        beneficiary's Medicare coinsurance on this claim -- relevant for
-        dual-eligible crossover-claim cost research. Confirmed real,
-        distinct names on both sides: MAX MDCR_COINSUR_PYMT_AMT, TAF
-        MDCR_COINSRNC_PD_AMT.
-
-        Same redaction caveat as mdcd_pymt_amt applies: for TAF, NOT
-        available for managed care encounter claims (claim_type_cd = '3',
-        'C', or 'W') -- CMS requires redaction of payment fields on
-        encounter claims. A NULL value on an encounter claim does not mean
-        no coinsurance payment occurred.
-
-        Amounts can be negative (credits/adjustments; the TAF codebook says "may be
-        negative", and MAX allows negative FFS amounts in some states). Do not
-        drop negatives or treat them as errors when summing.
+      description: Medicaid payment toward Medicare coinsurance. Redacted on TAF encounters. Can be negative.
       source:
         - MDCR_COINSUR_PYMT_AMT
         - MDCR_COINSRNC_PD_AMT
@@ -384,22 +276,7 @@ columns:
       cast:
         "*": "TRY_CAST({column_name} AS DOUBLE)"
   - mdcr_ded_pymt_amt:
-      description: >-
-        Amount paid by Medicaid/CHIP (or the managed care plan) toward the
-        beneficiary's Medicare deductible on this claim -- relevant for
-        dual-eligible crossover-claim cost research. Confirmed real,
-        distinct names on both sides: MAX MDCR_DED_PYMT_AMT, TAF
-        MDCR_DDCTBL_PD_AMT.
-
-        Same redaction caveat as mdcd_pymt_amt applies: for TAF, NOT
-        available for managed care encounter claims (claim_type_cd = '3',
-        'C', or 'W') -- CMS requires redaction of payment fields on
-        encounter claims. A NULL value on an encounter claim does not mean
-        no deductible payment occurred.
-
-        Amounts can be negative (credits/adjustments; the TAF codebook says "may be
-        negative", and MAX allows negative FFS amounts in some states). Do not
-        drop negatives or treat them as errors when summing.
+      description: Medicaid payment toward the Medicare deductible. Redacted on TAF encounters. Can be negative.
       source:
         - MDCR_DED_PYMT_AMT
         - MDCR_DDCTBL_PD_AMT
@@ -408,14 +285,8 @@ columns:
         "*": "TRY_CAST({column_name} AS DOUBLE)"
   - drg_rel_group:
       description: >-
-        Diagnosis related group code. For MAX, 8888-filled means no DRG system was used and
-        9999-filled means the DRG value is unknown; both are mapped to null. For TAF, values are
-        kept as reported (per TAF's own documentation, DRG_CD is "not always a CMS DRG" -- see
-        drg_rel_group_ind for which grouping system produced this code).
-
-        No fixed pad width is applied: DRG codes have no single canonical width across grouping
-        systems (MAX's field is 4 characters wide; CMS MS-DRGs are conventionally 3 digits), so
-        any leading zeros in the source value are kept as-is and none are added.
+        DRG code as reported, not always a CMS DRG (see drg_rel_group_ind). No padding added.
+        MAX 8888 (no DRG system) and 9999 (unknown) -> NULL.
       source:
         - DRG_REL_GROUP
         - DRG_CD
@@ -430,20 +301,8 @@ columns:
           END
   - drg_rel_group_ind:
       description: >-
-        DRG grouping algorithm/system indicator for the code in
-        drg_rel_group. Same encoding confirmed on both MAX
-        (DRG_REL_GROUP_IND) and TAF (DRG_CD_SYS), so no source_type-specific
-        recoding is needed:
-          positions 1-2 = the system that produced the DRG value -- a
-            2-character USPS state postal code if the DRG values come from
-            a state-specific system, "HG" if from the CMS Grouper, or "XX"
-            if from another system;
-          positions 3-4 = the 2-digit grouper version used (01-98), or "99"
-            if the version is unknown.
-        For example "HG33" = CMS Grouper version 33. MAX 8888 (no DRG system
-        was used) and 9999 (unknown) are mapped to NULL, the same rule as
-        drg_rel_group. NULL = grouping system not reported / not applicable /
-        unknown.
+        Grouper behind drg_rel_group: 2-letter system (state code, HG = CMS Grouper, XX = other)
+        + 2-digit version (99 = unknown), e.g. HG33. MAX 8888 and 9999 -> NULL.
       source:
         - DRG_REL_GROUP_IND
         - DRG_CD_SYS
@@ -458,13 +317,8 @@ columns:
           END
   - billing_provider_id:
       description: >-
-        State-assigned unique identification number for the billing
-        provider. Confirmed real, distinct names on both sides: MAX
-        PRVDR_ID_NMBR, TAF BLG_PRVDR_ID. Leading/trailing spaces are trimmed
-        and blank -> NULL (MAX fixed-width IDs can carry trailing spaces).
-        A state Medicaid ID, not an NPI: unique only within a state, and not
-        reliably stable across the MAX-to-TAF transition. Used to combine TAF
-        claims into MAX-style stays (docs/max-taf/ip/findings/stay_rollup.md).
+        State billing provider ID, trimmed. Unique only within a state; may change at the
+        MAX-to-TAF switch. Part of the stay link key.
       source:
         - PRVDR_ID_NMBR
         - BLG_PRVDR_ID
@@ -474,14 +328,8 @@ columns:
         "*": "NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '')"
   - billing_npi:
       description: >-
-        National Provider Identifier of the billing provider: TAF BLG_PRVDR_NPI, MAX NPI (element
-        25; added in MAX 2005, so NULL for 1999-2004; 9-filled 2005-2008, NULL if the fill is 12 nines,
-        enclave check E21). Kept only if the
-        trimmed value is exactly 10 digits and not the filler 9999999996; blank and everything
-        else -> NULL (IP-R39). No repeated-digit rule, so 0000000000 is kept. A trailing ".0"
-        (a numeric read) is removed first. Key column with billing_provider_id (IP-R35); for a TAF
-        stay, the first non-NULL NPI in claim order; the stay rollup links claims with no state
-        provider ID by this NPI (IP-R18).
+        Billing provider NPI. Kept only if 10 digits and not 9999999996 (IP-R39). MAX has it
+        from 2005 (9-filled 2005-2008). Links TAF claims that have no state provider ID.
       source:
         - BLG_PRVDR_NPI
         - NPI
@@ -495,51 +343,46 @@ columns:
             ELSE NULL
           END
 
-  # Helper columns used by the TAF stay rollup (docs/max-taf/ip/rollup_plan_2026-10-22.md), to be
-  # dropped from the output by it. TAF only (NULL for MAX).
-  # Illinois claim family netting (IP-R11):
+  # Helper columns for the rollup (TAF only; NULL for MAX)
   - claim_num_orig:
-      description: TAF original claim number (ICN) assigned by the state; links an Illinois claim to its adjustments.
+      description: Original claim number; groups an Illinois claim with its adjustments.
       source:
         - CLM_NUM_ORIG
       type: VARCHAR
       cast:
         "*": "NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '')"
   - claim_num_adj:
-      description: TAF adjustment claim number; NULL on the original record of a claim family.
+      description: Adjustment claim number; NULL on the original record.
       source:
         - CLM_NUM_ADJ
       type: VARCHAR
       cast:
         "*": "NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '')"
   - adjudication_date:
-      description: TAF adjudication date; orders the records of a claim family.
+      description: Orders the records of an Illinois claim family.
       source:
         - ADJDCTN_DT
       type: DATE
       cast:
         "*": "TRY_CAST({column_name} AS DATE)"
   - srvc_trkng_pymt_amt:
-      description: TAF service tracking payment amount; Illinois sometimes reports a claim's payment here.
+      description: Service tracking payment; Illinois sometimes puts the claim's payment here.
       source:
         - SRVC_TRKNG_PYMT_AMT
       type: DOUBLE
       cast:
         "*": "TRY_CAST({column_name} AS DOUBLE)"
-  # Link dates (IP-R25, IP-R37):
   - srvc_end_dt_cd:
       description: >-
-        TAF (CCW-derived) source of SRVC_END_DT: 1 = IP header discharge date, 4 = latest line
-        service end date, 5 = latest line service begin date (taf_claims_codebook.txt:7290-7307).
+        Where SRVC_END_DT came from: 1 = discharge date, 4 = last line end date, 5 = last line
+        begin date. Decides whether the end date can link claims (IP-R37).
       source:
         - SRVC_END_DT_CD
       type: VARCHAR
       cast:
         "*": "NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '')"
-  # Stay crossover (IP-R29): a TAF claim is a crossover when this is '1', or when it is NULL and
-  # Medicare coinsurance or deductible > $0.
   - crossover_clm_ind:
-      description: TAF crossover claim indicator (CROSSOVER_CLM_IND; 0 = not crossover, 1 = crossover, NULL = missing). Other values -> NULL.
+      description: Medicare crossover claim, '0' or '1' (IP-R29).
       source:
         - CROSSOVER_CLM_IND
       type: VARCHAR
@@ -550,12 +393,10 @@ columns:
             WHEN TRY_CAST({column_name} AS DOUBLE) = 1 THEN '1'
             ELSE NULL
           END
-  # "&" MSIS IDs (IP-R34, IP-R35 amp_msis_id_ind):
   - prsn_clm_ind:
       description: >-
-        TAF person-claim indicator (PRSN_CLM_IND, CCW-derived; 0 = not a claim for a person:
-        missing or "&" MSIS ID, service tracking, or missing claim type; 1 = person claim). NULL in
-        RIF releases without the column. Other values -> NULL.
+        1 = claim for a person; 0 = missing or "&" MSIS ID, service tracking, or no claim type
+        (IP-R34). NULL in older RIF releases.
       source:
         - PRSN_CLM_IND
       type: INT
