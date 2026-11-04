@@ -41,12 +41,13 @@ columns:
       cast:
         "*": "TRY_CAST({column_name} AS VARCHAR)"
   - msis_id:
-      description: State-assigned person ID; unique only within a state.
+      description: >-
+        State-assigned person ID; unique only within a state. Trimmed; blank -> NULL (IP-R45 d).
       source:
         - MSIS_ID
       type: VARCHAR
       cast:
-        "*": "TRY_CAST({column_name} AS VARCHAR)"
+        "*": "NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '')"
   - claim_id:
       description: TAF claim ID. NULL for MAX (rows are already stays).
       source:
@@ -115,7 +116,7 @@ columns:
   - patient_status_cd:
       description: >-
         Discharge status (NUBC 2-digit code, same in MAX and TAF). Numeric reads are cleaned
-        ("1.0" -> "01"). MAX 99 (unknown) -> NULL.
+        ("1.0" -> "01"). 99 (unknown) -> NULL in MAX and TAF (IP-R44 a).
       source:
         - PATIENT_STATUS_CD
         - PTNT_DSCHRG_STUS_CD
@@ -381,6 +382,20 @@ columns:
       type: VARCHAR
       cast:
         "*": "NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '')"
+  - submtg_state_cd:
+      description: >-
+        Submitting state entity, 2-digit code (93 WY CHIP, 94 MT TPA, 97 PA CHIP). Link key state
+        (IP-R44 b; STATE_CD's main code when a year has none, IP-R45 a). Output `state` unchanged.
+      source:
+        - SUBMTG_STATE_CD
+      type: VARCHAR
+      cast:
+        "*": |
+          CASE
+            WHEN regexp_full_match(regexp_replace(TRIM(CAST({column_name} AS VARCHAR)), '\.0+$', ''), '[0-9]{{1,2}}')
+              THEN LPAD(regexp_replace(TRIM(CAST({column_name} AS VARCHAR)), '\.0+$', ''), 2, '0')
+            ELSE NULL
+          END
   - crossover_clm_ind:
       description: Medicare crossover claim, '0' or '1' (IP-R29).
       source:
