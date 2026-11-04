@@ -1,0 +1,65 @@
+# First TAF year per state (IP-R40): the first calendar year of the state's TAF files. TAF stays
+# admitted before Jan 1 of that year get cutover_ind TRUE (harmonizecms/stays.py aggregate_stays);
+# MAX rows are flagged in the state's year before it (later step). Keys are `state` postal codes.
+# Both CCW tables give the same year for every state (docs/max-taf/ip/findings/cutover_years.md):
+# - CCW MAX user guide v2.9 (June 2026), App. C "MAX and TAF Availability by State and Year",
+#   docs/sources/max_taf_guidance/max_docs/ccw-max-user-guide.txt:1966-2040
+# - CCW TAF RIF user guide v2.2 (July 2026), App. B "State Cutover to T-MSIS and Availability of MAX
+#   and TAF Research Files", docs/sources/max_taf_guidance/ccw-taf-rif-user-guide.txt:2069-2172
+# PR, VI and GU have no MAX. Separate submitters (PA CHIP, WY CHIP, MT TPA) start no earlier than
+# their state and are not listed.
+first_taf_year:
+  AK: 2014
+  AL: 2014
+  AR: 2016
+  AZ: 2015
+  CA: 2016
+  CO: 2014
+  CT: 2016
+  DC: 2014
+  DE: 2014
+  FL: 2014
+  GA: 2016
+  GU: 2023
+  HI: 2015
+  IA: 2016
+  ID: 2016
+  IL: 2014
+  IN: 2015
+  KS: 2014
+  KY: 2015
+  LA: 2016
+  MA: 2015
+  MD: 2014
+  ME: 2014
+  MI: 2016
+  MN: 2016
+  MO: 2016
+  MS: 2016
+  MT: 2014
+  NC: 2014
+  ND: 2014
+  NE: 2014
+  NH: 2014
+  NJ: 2016
+  NM: 2014
+  NV: 2014
+  NY: 2016
+  OH: 2015
+  OK: 2015
+  OR: 2016
+  PA: 2016
+  PR: 2015
+  RI: 2014
+  SC: 2015
+  SD: 2016
+  TN: 2016
+  TX: 2015
+  UT: 2016
+  VA: 2015
+  VI: 2017
+  VT: 2016
+  WA: 2015
+  WI: 2014
+  WV: 2016
+  WY: 2016

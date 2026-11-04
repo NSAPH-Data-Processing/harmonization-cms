@@ -8,7 +8,7 @@ path_pattern:
   - "{basepath}/{year}/taf_inpatient_header_res000017155_req013731/part-*.parquet"
   - "{basepath}/{year}/maxdata_*_ip/part-*.parquet"
 
-# TAF claims -> stays (harmonizecms/stays.py). Built in steps; not hooked into the harmonizer yet.
+# TAF claims -> stays (harmonizecms/stays.py). Built in steps (1-4 exist); not hooked into the harmonizer yet.
 rollup:
   rows: "source_type = 'taf'"
   filters:
@@ -32,6 +32,11 @@ rollup:
       NOT COALESCE(claim_type_cd IN ('1', 'A') AND mdcd_pymt_amt = 0
         AND NOT (COALESCE(mdcr_coinsur_pymt_amt, 0) > 0 OR COALESCE(mdcr_ded_pymt_amt, 0) > 0
                  OR COALESCE(tp_pymt_amt, 0) > 0), FALSE)
+  # Medicare crossover claim (IP-R29, IP-R50 a): the flag, else (flag NULL) Medicare coinsurance or
+  # deductible > $0. Sets crossover_ind and zeroes covered days.
+  crossover: >-
+    COALESCE(crossover_clm_ind = '1',
+             COALESCE(mdcr_coinsur_pymt_amt, 0) > 0 OR COALESCE(mdcr_ded_pymt_amt, 0) > 0)
 
 columns:
   - bene_id:

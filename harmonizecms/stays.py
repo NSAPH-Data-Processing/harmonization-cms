@@ -4,8 +4,8 @@ Combine TAF inpatient claims into MAX-style hospital stays (the `rollup:` block 
 Design: docs/max-taf/ip/rollup_plan_2026-10-22.md (IP-R18: MAX sets which claims go in, the CMS
 brief 5011 Table 1 rule sets how they link); decisions in docs/max-taf/ip/decisions.md.
 
-Built in steps (IP-R26). This file so far has steps 1-3: the claim preparation that runs before
-linking (1-2), and the linking of claims into stays (3).
+Built in steps (IP-R26). This file so far has steps 1-4: the claim preparation that runs before
+linking (1-2), the linking of claims into stays (3), and one row per stay (4).
 
 Step 1, `prepare_claims` (plan §1 A, steps 1-4), in the order of IP-R19 / review R4:
 1. `filters`: claim types MAX doesn't have (service tracking 4/D/X, IP-R08; Illinois Y, IP-R11).
@@ -40,6 +40,11 @@ Step 3, `link_claims` (plan §1 A step 9 and B; IP-R46, IP-R47), adds `claim_rid
    of a key whose dates touch within a day); an island with no blocked pair is one stay, the others
    go to `_components`. An island over `island_cap` claims stops the run (IP-R47 a).
 
+Step 4, `aggregate_stays` (plan §1 C 10-13 and §4; IP-R28, IP-R29, IP-R35, IP-R38, IP-R40, IP-R49
+to IP-R52): `stay_claims` -> table `built_stays`, one row per stay (columns STAY_COLUMNS), with the
+per-state first TAF year from cutover.yaml (`load_first_taf_year`). Its row order is not defined
+(IP-R51 b).
+
 Input: a table of harmonized TAF claim rows (the ip.yaml columns) plus `_file_year`, the year
 file each row came from. It must hold rollup rows only (`rollup.rows`, TAF); other rows stop the
 run. Output: table `stay_claims`, one row per final-action claim.
@@ -47,8 +52,11 @@ run. Output: table `stay_claims`, one row per final-action claim.
 from __future__ import annotations
 
 import logging
+import re
+from pathlib import Path
 
 import duckdb
+import yaml
 
 LOGGER = logging.getLogger(__name__)
 
@@ -116,6 +124,44 @@ E17_LONG_DAYS = 30
 E17_STATE_SHARE = 0.01
 E17_STATE_MIN_MULTI = 100
 E17_ALL_SHARE = 0.002
+
+# Step 4 (plan §4). No MIN/MAX/arg_min/arg_max whose value or key is a STRUCT or LIST here: order
+# with integer ranks or list_sort of structs (PR4-1, PR4-4; MIN(struct) allocated outside
+# memory_limit on duckdb 1.0.0).
+# Helper columns used here and not output (ip.yaml helper block, after step 1)
+HELPER_COLUMNS = ("srvc_end_dt_cd", "submtg_state_cd", "crossover_clm_ind", "prsn_clm_ind")
+# Columns added by steps 1-3, not output
+PIPELINE_COLUMNS = ("_file_year", "link_adm", "link_dis", "link_state", "link_provider",
+                    "nonlink_reasons", "claim_rid", "stay_id")
+# "Last claim" order (IP-R28, plan §4): latest link_dis, class, latest begin, then claim_rid
+END_ORDER = f"link_dis DESC NULLS LAST, {CLASS_RANK}, srvc_bgn_dt DESC NULLS LAST, claim_rid DESC"
+# '&' claim (IP-R35 e, IP-R42 12); same as the amp_msis_id non-link reason plus the literal 4/D/X rule.
+# NULL when prsn_clm_ind is NULL, so a stay whose indicators are all NULL gets NULL (IP-R42 12,
+# IP-R53 c; without the guard a NULL claim type made it FALSE)
+AMP_CLAIM = (f"CASE WHEN prsn_clm_ind IS NOT NULL THEN {NONLINK_REASONS['amp_msis_id']} "
+             f"AND claim_type_cd NOT IN ('4', 'D', 'X') END")
+COVERED_DAYS_CAP = 365  # MAX 2006-2015 (IP-R29)
+# Code-list order key claim_rid * CODE_POS_FACTOR + position (an integer, not a struct: PR4-1);
+# lists must be shorter than this (checked before step 4 runs)
+CODE_POS_FACTOR = 1000
+# IP-R35 a admissions key, for the key-sharing count
+ADMISSIONS_KEY = ["year", "state", "msis_id", "bene_id", "billing_provider_id", "billing_npi",
+                  "admission_date", "srvc_bgn_dt", "srvc_end_dt"]
+# Output columns: ip.yaml order, claim_id replaced in place by claim_ids + n_claims_combined
+# (archive A:576-578), helpers dropped, the four stay columns last (IP-R35 e, IP-R38)
+STAY_COLUMNS = [
+    "bene_id", "msis_id", "claim_ids", "n_claims_combined", "year", "raw_filename", "source_type",
+    "state", "admission_date", "srvc_bgn_dt", "srvc_end_dt", "patient_status_cd", "claim_type_cd",
+    "adjustment_cd", "primary_diagnosis", "diagnoses", "diagnosis_version_cds", "procedures",
+    "procedure_coding_system", "mdcd_cvrd_days", "mdcd_pymt_amt", "tp_pymt_amt",
+    "mdcr_coinsur_pymt_amt", "mdcr_ded_pymt_amt", "drg_rel_group", "drg_rel_group_ind",
+    "billing_provider_id", "billing_npi",
+    "n_other_type_claims", "crossover_ind", "cutover_ind", "amp_msis_id_ind"]
+NEW_STAY_COLUMNS = ("claim_ids", "n_claims_combined", "n_other_type_claims", "crossover_ind",
+                    "cutover_ind", "amp_msis_id_ind")
+STAY_RULE_INPUTS = [c for c in STAY_COLUMNS if c not in NEW_STAY_COLUMNS]  # = ip.yaml output columns
+# Step 4 temp tables
+STAY_TEMP_TABLES = ("_stay_rank", "_stay_agg", "_stay_codes_diagnoses", "_stay_codes_procedures")
 
 
 def _count(conn: duckdb.DuckDBPyConnection, table_and_where: str) -> int:
@@ -190,6 +236,7 @@ def prepare_claims(
     diag["claims_read"] = n_input
     file_years = [r[0] for r in conn.execute(
         f"SELECT DISTINCT _file_year FROM {input_table} ORDER BY 1").fetchall()]
+    diag["file_years"] = file_years  # the run's year files, for aggregate_stays (IP-R49 a)
     # Year files with no submitting state at all (column absent from the extract; IP-R45 a), for
     # prepare_links. Found before netting: a netted Illinois claim takes the latest year file but
     # may carry an earlier record's submitter code
@@ -906,3 +953,356 @@ def _e17_threshold(bridged_by_state: dict, multi_by_state: dict, n_stays: int) -
         LOGGER.warning(f"E17 threshold reached (plan §3b): IP-R21 goes back to the user (states "
                        f"over {E17_STATE_SHARE:.0%}: {over}; share of all stays {share_all:.3%})")
     return out
+
+
+def _check_first_taf_year(first_taf_year: dict) -> None:
+    """
+    Raises ValueError unless every key is a two-letter upper-case state code and every value an
+    int (not bool) from 1999 to 2100. Keys and values go into SQL after this check.
+    """
+    if not isinstance(first_taf_year, dict):
+        raise ValueError(f"first_taf_year must be a dict {{state: year}}, not {type(first_taf_year).__name__}")
+    bad = {k: v for k, v in first_taf_year.items()
+           if not (isinstance(k, str) and re.fullmatch(r"[A-Z]{2}", k))
+           or not (isinstance(v, int) and not isinstance(v, bool) and 1999 <= v <= 2100)}
+    if bad:
+        raise ValueError(f"first_taf_year: bad entries (key must be a two-letter upper-case state code, "
+                         f"value an int year 1999-2100): {bad}")
+
+
+def load_first_taf_year(path: str | Path) -> dict[str, int]:
+    """First TAF year per state from cutover.yaml (IP-R40); validated by _check_first_taf_year."""
+    cfg = yaml.safe_load(Path(path).read_text())
+    if not isinstance(cfg, dict) or "first_taf_year" not in cfg:
+        raise ValueError(f"{path}: no `first_taf_year` mapping")
+    table = cfg["first_taf_year"]
+    _check_first_taf_year(table)
+    return {str(k): int(v) for k, v in table.items()}
+
+
+def _first_taf_case(first_taf_year: dict[str, int], state_expr: str) -> str:
+    """SQL: the first TAF year of `state_expr`'s state, NULL for a NULL state or one not in the table."""
+    if not first_taf_year:
+        return "NULL::INT"
+    return (f"(CASE {state_expr} "
+            + " ".join(f"WHEN '{s}' THEN {int(y)}" for s, y in sorted(first_taf_year.items())) + " END)")
+
+
+def _stay_rules(file_years: list[int]) -> dict[str, str | None]:
+    """
+    {output column: SQL on a stay's claims (GROUP BY stay_id), or None when the output step sets
+    it}, in STAY_COLUMNS order (plan §2.2). The claims carry `_end_rank` (1 = the last claim,
+    END_ORDER), `_file_rank` (1 = latest year file, then highest claim_rid) and `_xover`.
+    """
+    years = ", ".join(str(int(y)) for y in file_years) or "NULL"
+    end_year = "YEAR(MAX(srvc_end_dt))"
+
+    def first(c):  # the first claim's value, NULL included
+        return f"arg_min_null({c}, claim_rid)"
+
+    def first_nn(c):  # the first non-NULL value
+        return f"arg_min({c}, claim_rid) FILTER (WHERE {c} IS NOT NULL)"
+
+    def last(c):  # the last claim's value (IP-R28), NULL included
+        return f"arg_min_null({c}, _end_rank)"
+
+    def drg(c):  # DRG and its indicator from the last claim with a DRG
+        return f"arg_min_null({c}, _end_rank) FILTER (WHERE drg_rel_group IS NOT NULL)"
+
+    def latest_file(c):
+        return f"arg_min_null({c}, _file_rank)"
+
+    def money(c):
+        # Multi-claim stays: rounded to cents; singles: the claim's value. `+ 0.0` turns -0.0 into
+        # 0.0 and changes no other double (IP-R51 c, IP-R52 a)
+        return f"CASE WHEN COUNT(*) = 1 THEN MIN({c}) + 0.0 ELSE CAST(ROUND(SUM({c}), 2) AS DOUBLE) + 0.0 END"
+    return {
+        "bene_id": first_nn("bene_id"),
+        "msis_id": first("msis_id"),
+        # NULL claim_ids kept, so the length is n_claims_combined (IP-R49 c)
+        "claim_ids": "list_transform(list_sort(list({'r': claim_rid, 'c': claim_id})), x -> x.c)",
+        "n_claims_combined": "COUNT(*)",
+        # IP-R05, IP-R49 a, IP-R51 d: the latest end date's year if the run has files for it, else
+        # the stay's latest year file
+        "year": f"CAST(CASE WHEN {end_year} IN ({years}) THEN {end_year} ELSE MAX(_file_year) END AS INT)",
+        "raw_filename": latest_file("raw_filename"),
+        "source_type": latest_file("source_type"),
+        "state": first("state"),  # = step 3's stay state (IP-R47 b)
+        "admission_date": "MIN(link_adm)",
+        "srvc_bgn_dt": "MIN(srvc_bgn_dt)",
+        "srvc_end_dt": "MAX(srvc_end_dt)",
+        "patient_status_cd": last("patient_status_cd"),
+        "claim_type_cd": last("claim_type_cd"),
+        "adjustment_cd": "MAX(adjustment_cd)",
+        "primary_diagnosis": first_nn("primary_diagnosis"),
+        # Code lists: singles from their claim, multi-claim stays from _stay_codes_* (IP-R49 c, PR4-4)
+        "diagnoses": None,
+        "diagnosis_version_cds": None,
+        "procedures": None,
+        "procedure_coding_system": None,
+        # IP-R29: crossover -> 0 (even when the sum is NULL, IP-R49 d), else capped. A CASE: duckdb's
+        # LEAST skips NULLs, so LEAST(NULL, 365) would be 365
+        "mdcd_cvrd_days": (f"CAST(CASE WHEN bool_or(_xover) THEN 0 WHEN SUM(mdcd_cvrd_days) > {COVERED_DAYS_CAP} "
+                           f"THEN {COVERED_DAYS_CAP} ELSE SUM(mdcd_cvrd_days) END AS INT)"),
+        "mdcd_pymt_amt": money("mdcd_pymt_amt"),
+        "tp_pymt_amt": money("tp_pymt_amt"),
+        "mdcr_coinsur_pymt_amt": money("mdcr_coinsur_pymt_amt"),
+        "mdcr_ded_pymt_amt": money("mdcr_ded_pymt_amt"),
+        "drg_rel_group": drg("drg_rel_group"),
+        "drg_rel_group_ind": drg("drg_rel_group_ind"),
+        "billing_provider_id": first("billing_provider_id"),
+        "billing_npi": first_nn("billing_npi"),
+        "n_other_type_claims": f"COUNT(*) FILTER (WHERE claim_type_cd IN ({_sql_list(OTHER_TYPES)}))",
+        "crossover_ind": "bool_or(_xover)",
+        "cutover_ind": None,  # set in the output step (IP-R40)
+        "amp_msis_id_ind": f"bool_or({AMP_CLAIM})",
+    }
+
+
+def aggregate_stays(
+    conn: duckdb.DuckDBPyConnection,
+    rollup_cfg: dict,
+    file_years: list[int],
+    first_taf_year: dict[str, int],
+    out_table: str = "built_stays",
+) -> dict:
+    """
+    Step 4 (plan §1 C 10-13; §4): `stay_claims` after link_claims -> `out_table`, one row per stay
+    (columns STAY_COLUMNS). Row order of `out_table` is not defined (IP-R51 b). `stay_claims` is
+    read only. Returns run.json diagnostics.
+
+    `file_years`: the run's year files (prepare_claims' `file_years`), for the `year` fallback
+    (IP-R49 a, IP-R51 d). `first_taf_year`: {state: first TAF year}, from `load_first_taf_year`
+    (IP-R40, IP-R49 b). `rollup_cfg['crossover']`: the per-claim crossover SQL (IP-R50 a).
+
+    Raises ValueError on bad input (before link_claims, unknown or missing columns, no crossover
+    rule, a bad first_taf_year, claims of a year file not in `file_years`, code lists of
+    CODE_POS_FACTOR or more elements), RuntimeError if the built stays fail the integrity checks.
+    """
+    cols = _columns(conn, "stay_claims")
+    if "claim_rid" not in cols or "stay_id" not in cols:
+        raise ValueError("stay_claims has no claim_rid / stay_id: run link_claims first")
+    if out_table.lower() == "stay_claims" or out_table.lower().startswith("_stay_"):
+        raise ValueError(f"out_table {out_table!r} would overwrite stay_claims or a step-4 temp table")
+    # Every column must have a rule (IP-R16)
+    expected = set(STAY_RULE_INPUTS) | {"claim_id"} | set(HELPER_COLUMNS) | set(PIPELINE_COLUMNS)
+    unknown, missing = sorted(set(cols) - expected), sorted(expected - set(cols))
+    if unknown or missing:
+        raise ValueError(f"stay_claims columns don't match step 4's rules: unknown (no rule) {unknown}, "
+                         f"missing {missing}")
+    crossover = (rollup_cfg or {}).get("crossover")
+    if not crossover:
+        raise ValueError("rollup.crossover (the per-claim Medicare crossover SQL) is missing (IP-R50 a)")
+    _check_first_taf_year(first_taf_year)
+    data_years = [r[0] for r in conn.execute("SELECT DISTINCT _file_year FROM stay_claims").fetchall()]
+    known = {int(y) for y in file_years}
+    bad_years = sorted((y for y in data_years if y is None or y not in known), key=lambda y: (y is None, y))
+    if bad_years:
+        raise ValueError(f"stay_claims has claims with _file_year {bad_years} not in file_years "
+                         f"{sorted(known)} (pass prepare_claims' file_years)")
+    lens = conn.execute("SELECT " + ", ".join(f"COALESCE(MAX(len({c})), 0)" for c, _ in CODE_LISTS)
+                        + " FROM stay_claims").fetchone()
+    if max(lens) >= CODE_POS_FACTOR:
+        raise ValueError(f"A code list is longer than {CODE_POS_FACTOR - 1} elements "
+                         f"({dict(zip((c for c, _ in CODE_LISTS), lens))}); the code order key needs "
+                         f"fewer (CODE_POS_FACTOR)")
+    try:
+        return _aggregate_stays(conn, crossover, list(file_years), dict(first_taf_year), out_table)
+    finally:  # on errors too
+        for t in STAY_TEMP_TABLES:
+            _drop_temp(conn, t)
+
+
+def _aggregate_stays(conn: duckdb.DuckDBPyConnection, crossover: str, file_years: list[int],
+                     first_taf_year: dict[str, int], out_table: str) -> dict:
+    """The body of `aggregate_stays`, after its checks."""
+    rules = _stay_rules(file_years)
+    if set(rules) != set(STAY_COLUMNS):
+        raise RuntimeError(f"_stay_rules keys differ from STAY_COLUMNS: "
+                           f"{sorted(set(rules) ^ set(STAY_COLUMNS))}")
+
+    # 10. Ranks on a narrow table, joined back (a window over the full width is slow)
+    conn.execute(f"""
+        CREATE OR REPLACE TEMP TABLE _stay_rank AS
+        SELECT claim_rid,
+            ROW_NUMBER() OVER (PARTITION BY stay_id ORDER BY {END_ORDER}) AS _end_rank,
+            ROW_NUMBER() OVER (PARTITION BY stay_id ORDER BY _file_year DESC, claim_rid DESC) AS _file_rank
+        FROM stay_claims
+    """)
+    # 11. One GROUP BY pass: the stay columns plus what the diagnostics and checks need
+    agg = ",\n            ".join(f"{rules[c]} AS {c}" for c in STAY_COLUMNS if rules[c] is not None)
+    conn.execute(f"""
+        CREATE OR REPLACE TEMP TABLE _stay_agg AS
+        WITH r AS (
+            SELECT s.*, k._end_rank, k._file_rank, COALESCE(({crossover}), FALSE) AS _xover
+            FROM stay_claims s JOIN _stay_rank k USING (claim_rid))
+        SELECT stay_id,
+            {agg},
+            MIN(claim_rid) AS _min_rid,
+            MIN(_end_rank) FILTER (WHERE drg_rel_group IS NOT NULL) AS _drg_rank,
+            COUNT(DISTINCT COALESCE(claim_type_cd, '~')) AS _n_types,
+            CAST(SUM(mdcd_cvrd_days) AS BIGINT) AS _days_sum,
+            COUNT(DISTINCT billing_npi) AS _n_npi,
+            COUNT(DISTINCT bene_id) AS _n_bene,
+            MIN(admission_date) AS _adm_reported,
+            MAX(_file_year) AS _latest_file_year,
+            COUNT(*) - COUNT(claim_id) AS _n_claim_id_null,
+            bool_or(len(nonlink_reasons) > 0) AS _has_non_linkable
+        FROM r GROUP BY stay_id
+    """)
+    # 12. Code lists of multi-claim stays (IP-R49 c): distinct (code, flag) pairs at their first
+    # (claim, position), NULL codes dropped. Positional flags, so a NULL flags list gives NULL flags
+    for codes, flags in CODE_LISTS:
+        conn.execute(f"""
+            CREATE OR REPLACE TEMP TABLE _stay_codes_{codes} AS
+            WITH u AS (
+                SELECT stay_id, claim_rid, pos, {codes}[pos] AS code, {flags}[pos] AS flag
+                FROM (SELECT stay_id, claim_rid, {codes}, {flags}, unnest(range(1, len({codes}) + 1)) AS pos
+                      FROM stay_claims
+                      WHERE stay_id IN (SELECT stay_id FROM _stay_agg WHERE n_claims_combined > 1))),
+            f AS (
+                SELECT stay_id, code, flag, MIN(claim_rid * {CODE_POS_FACTOR} + pos) AS k
+                FROM u WHERE code IS NOT NULL GROUP BY stay_id, code, flag),
+            g AS (
+                SELECT stay_id, list_sort(list({{'k': k, 'c': code, 'f': flag}})) AS l FROM f GROUP BY stay_id)
+            SELECT stay_id, list_transform(l, x -> x.c) AS {codes}, list_transform(l, x -> x.f) AS {flags}
+            FROM g
+        """)
+    # 13. Output. A single's code lists are its claim's (s1: stay_id = its smallest claim_rid,
+    # checked below); cutover_ind = admitted before Jan 1 of the state's first TAF year (IP-R40)
+    alias = {codes: f"x{i}" for i, (codes, _) in enumerate(CODE_LISTS)}
+    code_alias = {c: alias[codes] for codes, flags in CODE_LISTS for c in (codes, flags)}
+    sel = []
+    for c in STAY_COLUMNS:
+        if c in code_alias:
+            sel.append(f"CASE WHEN a.n_claims_combined = 1 THEN s1.{c} "
+                       f"ELSE COALESCE({code_alias[c]}.{c}, []::VARCHAR[]) END AS {c}")
+        elif c == "cutover_ind":
+            sel.append(f"YEAR(a.admission_date) < {_first_taf_case(first_taf_year, 'a.state')} AS cutover_ind")
+        else:
+            sel.append(f"a.{c}")
+    joins = " ".join(f"LEFT JOIN _stay_codes_{codes} {alias[codes]} ON {alias[codes]}.stay_id = a.stay_id"
+                     for codes, _ in CODE_LISTS)
+    conn.execute(f"""
+        CREATE OR REPLACE TABLE {out_table} AS
+        SELECT {", ".join(sel)}
+        FROM _stay_agg a {joins}
+        LEFT JOIN stay_claims s1 ON s1.claim_rid = a.stay_id
+    """)
+    diag: dict = {"stays_built": _count(conn, out_table)}
+    _aggregate_diagnostics(conn, diag, crossover, file_years, first_taf_year, out_table)
+    return diag
+
+
+def _aggregate_diagnostics(conn: duckdb.DuckDBPyConnection, diag: dict, crossover: str,
+                           file_years: list[int], first_taf_year: dict[str, int], out_table: str) -> None:
+    """Integrity checks (raise RuntimeError) and run.json counts of step 4 (plan §4)."""
+    n_claims, n_stays = conn.execute("SELECT COUNT(*), COUNT(DISTINCT stay_id) FROM stay_claims").fetchone()
+    in_stays, bad_len, bad_id, bad_mix, bad_amp, year_null = conn.execute("""
+        SELECT CAST(COALESCE(SUM(n_claims_combined), 0) AS BIGINT),
+            COUNT(*) FILTER (WHERE len(claim_ids) <> n_claims_combined),
+            COUNT(*) FILTER (WHERE stay_id <> _min_rid),
+            COUNT(*) FILTER (WHERE n_claims_combined > 1 AND _has_non_linkable),
+            COUNT(*) FILTER (WHERE n_claims_combined > 1 AND amp_msis_id_ind),
+            COUNT(*) FILTER (WHERE year IS NULL)
+        FROM _stay_agg
+    """).fetchone()
+    diag["claims_in_stays"] = in_stays
+    problems = {k: v for k, v in {
+        "claims_in_stays minus claims": in_stays - n_claims,
+        "stays_built minus stays": diag["stays_built"] - n_stays,
+        "stays with len(claim_ids) <> n_claims_combined": bad_len,
+        "stays whose stay_id is not their smallest claim_rid": bad_id,
+        "multi-claim stays with a non-linkable claim": bad_mix,
+        "multi-claim stays with amp_msis_id_ind": bad_amp,
+        "stays with NULL year": year_null}.items() if v}
+    if problems:
+        raise RuntimeError(f"aggregate_stays integrity checks failed: {problems}")
+
+    def by_state(where: str, table: str = "_stay_agg") -> dict:
+        return _nested_counts(conn, f"SELECT state, COUNT(*) FROM {table} WHERE {where} GROUP BY ALL ORDER BY ALL")
+    # Last claim and DRG (IP-R28)
+    diag["stays_status_null"] = by_state("patient_status_cd IS NULL")
+    diag["stays_drg_from_earlier_claim"] = by_state("_drg_rank > 1")
+    diag["stays_drg_null"] = by_state("drg_rel_group IS NULL")
+    diag["stays_mixed_claim_types"] = by_state("_n_types > 1")  # NULL counted as a type (IP-R50 b)
+    # Crossover and covered days (IP-R29, IP-R49 d, IP-R52 b)
+    diag["stays_crossover"] = by_state("crossover_ind")
+    diag["stays_cvrd_days_zeroed"] = by_state("crossover_ind AND _days_sum IS DISTINCT FROM 0")
+    diag["stays_cvrd_days_capped"] = by_state(f"NOT crossover_ind AND _days_sum > {COVERED_DAYS_CAP}")
+    diag["stays_cvrd_days_negative"] = by_state("_days_sum < 0")
+    diag["claims_crossover_clm_ind_null"] = _nested_counts(conn, """
+        SELECT state, _file_year, COUNT(*) FROM stay_claims
+        WHERE crossover_clm_ind IS NULL GROUP BY ALL ORDER BY ALL""")
+    diag["claims_crossover_by_fallback"] = _nested_counts(conn, f"""
+        SELECT state, _file_year, COUNT(*) FROM stay_claims
+        WHERE crossover_clm_ind IS NULL AND COALESCE(({crossover}), FALSE) GROUP BY ALL ORDER BY ALL""")
+    # First-claim and first-non-NULL fields
+    diag["stays_multiple_npi"] = by_state("_n_npi > 1")  # IP-R39 a
+    diag["stays_multiple_bene_id"] = by_state("_n_bene > 1")
+    diag["stays_admission_filled"] = by_state("admission_date IS DISTINCT FROM _adm_reported")
+    diag["stays_admission_null"] = by_state("admission_date IS NULL")
+    diag["stays_admission_after_srvc_bgn"] = by_state("admission_date > srvc_bgn_dt")
+    diag["stays_claim_ids_with_null"] = by_state("_n_claim_id_null > 0")  # IP-R49 c
+    diag["stays_primary_diagnosis_not_first_code"] = _count(
+        conn, f"{out_table} WHERE n_claims_combined > 1 AND primary_diagnosis IS DISTINCT FROM diagnoses[1]")
+    # Year (IP-R05, IP-R49 a, IP-R51 d)
+    years = ", ".join(str(int(y)) for y in file_years) or "NULL"
+    diag["stays_by_year"] = _nested_counts(conn, f"SELECT year, COUNT(*) FROM {out_table} GROUP BY ALL ORDER BY ALL")
+    fallback = _nested_counts(conn, f"""
+        SELECT CASE WHEN srvc_end_dt IS NULL THEN 'end_date_null' ELSE 'end_year_without_files' END,
+            year, COUNT(*)
+        FROM _stay_agg WHERE srvc_end_dt IS NULL OR YEAR(srvc_end_dt) NOT IN ({years})
+        GROUP BY ALL ORDER BY ALL""")
+    # Both categories always listed (IP-R53 b)
+    diag["stays_year_fallback"] = {k: fallback.get(k, {}) for k in ("end_date_null", "end_year_without_files")}
+    diag["stays_year_not_latest_file_year"] = _count(conn, "_stay_agg WHERE year <> _latest_file_year")
+    table_year = _first_taf_case(first_taf_year, "state")
+    diag["stays_year_before_first_taf_year"] = _nested_counts(conn, f"""
+        SELECT state, year, COUNT(*) FROM {out_table} WHERE year < {table_year} GROUP BY ALL ORDER BY ALL""")
+    # Stays sharing the IP-R35 a admissions key (IP-R41), by why: NULL MSIS ID, a NULL date, other
+    key = ", ".join(ADMISSIONS_KEY)
+    shared = _nested_counts(conn, f"""
+        SELECT CASE WHEN msis_id IS NULL THEN 'msis_id_null'
+                    WHEN admission_date IS NULL OR srvc_bgn_dt IS NULL OR srvc_end_dt IS NULL THEN 'dates_null'
+                    ELSE 'other' END,
+            state, year, COUNT(*)
+        FROM (SELECT {key}, COUNT(*) OVER (PARTITION BY {key}) AS n FROM {out_table})
+        WHERE n > 1 GROUP BY ALL ORDER BY ALL""")
+    diag["stays_sharing_admissions_key"] = {k: shared.get(k, {}) for k in ("msis_id_null", "dates_null", "other")}
+    # '&' and other-type stays (IP-R42 12, IP-R38)
+    diag["stays_amp_msis_id_ind"] = _nested_counts(conn, """
+        SELECT state, CASE WHEN amp_msis_id_ind THEN 'TRUE' ELSE 'NULL' END, COUNT(*) FROM _stay_agg
+        WHERE amp_msis_id_ind IS NOT FALSE GROUP BY ALL ORDER BY ALL""")
+    diag["stays_all_other_type"] = by_state("n_other_type_claims = n_claims_combined")
+    # Cutover (IP-R40)
+    diag["stays_cutover"] = by_state("cutover_ind", out_table)
+    diag["stays_cutover_state_not_in_table"] = by_state(f"state IS NULL OR {table_year} IS NULL", out_table)
+    diag["stays_cutover_admission_null"] = by_state(f"admission_date IS NULL AND {table_year} IS NOT NULL",
+                                                    out_table)
+    state_years = conn.execute(
+        "SELECT DISTINCT state, _file_year FROM stay_claims WHERE state IS NOT NULL").fetchall()
+    data_first: dict = {}
+    for s, y in state_years:
+        data_first[s] = min(y, data_first.get(s, y))
+    has = set(state_years)
+    diag["cutover_first_taf_year"] = {s: {"table": first_taf_year.get(s), "data": y}
+                                      for s, y in sorted(data_first.items())}
+    diag["cutover_states_rows_before_table_year"] = sorted(
+        s for s, y in data_first.items() if s in first_taf_year and y < first_taf_year[s])
+    if diag["cutover_states_rows_before_table_year"]:
+        LOGGER.warning(f"Claims in a year file before the state's first TAF year (cutover.yaml): "
+                       f"{diag['cutover_states_rows_before_table_year']}")
+    diag["cutover_states_no_rows_in_table_year"] = sorted(
+        s for s in data_first
+        if s in first_taf_year and first_taf_year[s] in file_years and (s, first_taf_year[s]) not in has)
+    diag["cutover_states_no_rows"] = sorted(
+        s for s, y in first_taf_year.items() if s not in data_first and file_years and y <= max(file_years))
+
+    def total(d: dict) -> int:
+        return sum(total(v) if isinstance(v, dict) else v for v in d.values())
+    LOGGER.info(f"Stays built: {diag['stays_built']} from {diag['claims_in_stays']} claims; crossover "
+                f"{total(diag['stays_crossover'])} (covered days zeroed {total(diag['stays_cvrd_days_zeroed'])}, "
+                f"capped {total(diag['stays_cvrd_days_capped'])}); year fallbacks "
+                f"{total(diag['stays_year_fallback'])}, year before first TAF year "
+                f"{total(diag['stays_year_before_first_taf_year'])}; cutover flagged {total(diag['stays_cutover'])}")
