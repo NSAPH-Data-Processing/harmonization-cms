@@ -114,7 +114,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
   - race:
       description: >
         Harmonized race codes. Codes 0-6 are numbered to align
-        exactly with Medicar race convention (the CCW/ResDAC-
+        exactly with Medicare race convention (the CCW/ResDAC-
         recommended research race variable) for cross-dataset consistency
         Codes 7-8 are MAX/TAF-only extensions beyond Medicare's 0-6 range, 
         capturing distinctions
@@ -254,9 +254,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         with TAF.
 
         Codebook:
-          0 = not missing eligibility information
-          1 = yes_missing_eligibility_information
-          NULL = missing source value / unrecognized value
+          0 = not missing eligibility information (MAX blank; MAX 2 = S-CHIP-only enrollee: some
+            month with chip_type_mo_* = 3 and no month with chip_type_mo_* 1, 2 or 4; TAF 0)
+          1 = yes_missing_eligibility_information (MAX 1; TAF 1)
+          NULL = missing source value (TAF blank, or no source variable) / unrecognized value (MAX:
+            other than blank, exactly 1 or 2; TAF: other than exactly 0 or 1; not rounded)
       source:
         - MSNG_ELG_DATA
         - MISG_ELGBLTY_DATA_IND
@@ -269,14 +271,17 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
               AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL
               THEN '0'
             WHEN source_type = 'max'
-              AND TRY_CAST({column_name} AS INTEGER) IN (1, 2)
+              AND TRY_CAST({column_name} AS DOUBLE) = 2
+              THEN '0'
+            WHEN source_type = 'max'
+              AND TRY_CAST({column_name} AS DOUBLE) = 1
               THEN '1'
 
             WHEN source_type = 'taf'
-              AND TRY_CAST({column_name} AS INTEGER) = 0
+              AND TRY_CAST({column_name} AS DOUBLE) = 0
               THEN '0'
             WHEN source_type = 'taf'
-              AND TRY_CAST({column_name} AS INTEGER) = 1
+              AND TRY_CAST({column_name} AS DOUBLE) = 1
               THEN '1'
 
             ELSE NULL
@@ -1148,7 +1153,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1175,6 +1180,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1205,7 +1211,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1232,6 +1238,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1262,7 +1269,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1289,6 +1296,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1319,7 +1327,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1346,6 +1354,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1376,7 +1385,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1403,6 +1412,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1433,7 +1443,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1460,6 +1470,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1490,7 +1501,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1517,6 +1528,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1547,7 +1559,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1574,6 +1586,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1604,7 +1617,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1631,6 +1644,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1661,7 +1675,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1688,6 +1702,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1718,7 +1733,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1745,6 +1760,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1775,7 +1791,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           health_home = health/medical home only (TAF only)
           integrated_care_for_duals = integrated care for dual eligibles only (TAF only)
           other_combination = MAX "other combinations" (15), plan mix not identified (MAX only)
-          ffs = fee-for-service, no managed care plan reported
+          ffs = fee-for-service, no managed care plan reported (MAX 16; TAF blank or 00)
           not_eligible = not eligible for Medicaid this month (MAX only)
           unknown = managed care status unknown (MAX only)
           NULL = missing source value / unrecognized value
@@ -1802,6 +1818,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '16' THEN 'ffs'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
+            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'ffs'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
             WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
@@ -1825,11 +1842,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for January (month 01).
       month: 1
@@ -1862,11 +1880,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for February (month 02).
       month: 2
@@ -1899,11 +1918,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for March (month 03).
       month: 3
@@ -1936,11 +1956,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for April (month 04).
       month: 4
@@ -1973,11 +1994,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for May (month 05).
       month: 5
@@ -2010,11 +2032,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for June (month 06).
       month: 6
@@ -2047,11 +2070,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for July (month 07).
       month: 7
@@ -2084,11 +2108,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for August (month 08).
       month: 8
@@ -2121,11 +2146,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for September (month 09).
       month: 9
@@ -2158,11 +2184,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for October (month 10).
       month: 10
@@ -2195,11 +2222,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for November (month 11).
       month: 11
@@ -2232,11 +2260,12 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
         docs/max-taf/ps/findings/materialization.md).
 
         Codebook:
-          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF 00
-            or blank -- TAF leaves the code blank in months not enrolled)
-          1 = eligible (MAX: any other code; TAF: a valid group code 01-76)
-          NULL = MAX blank code (MAX always codes non-enrollment as 00) / TAF code outside
-            the codebook's valid list (state submission error)
+          0 = not eligible this month (MAX 00 or 99 = claims but no eligibility record; TAF blank --
+            TAF leaves the code blank in months not enrolled -- or TAF 00, which is not in the TAF
+            codebook value list)
+          1 = eligible (MAX: any other code; TAF: a valid group code 01-09, 11-56, 59-76)
+          NULL = MAX blank code / source variable absent (MAX 1999-2004, or a file without the
+            column) / TAF code other than 00 outside the valid list
 
         Month-specific scalar version of `eligibility_month_ind` for December (month 12).
       month: 12
@@ -2303,9 +2332,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_01)
 
         Month-specific scalar version of `eligibility_group` for January (month 01).
       month: 1
@@ -2315,6 +2346,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -2426,9 +2458,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_02)
 
         Month-specific scalar version of `eligibility_group` for February (month 02).
       month: 2
@@ -2438,6 +2472,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -2549,9 +2584,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_03)
 
         Month-specific scalar version of `eligibility_group` for March (month 03).
       month: 3
@@ -2561,6 +2598,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -2672,9 +2710,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_04)
 
         Month-specific scalar version of `eligibility_group` for April (month 04).
       month: 4
@@ -2684,6 +2724,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -2795,9 +2836,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_05)
 
         Month-specific scalar version of `eligibility_group` for May (month 05).
       month: 5
@@ -2807,6 +2850,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -2918,9 +2962,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_06)
 
         Month-specific scalar version of `eligibility_group` for June (month 06).
       month: 6
@@ -2930,6 +2976,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3041,9 +3088,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_07)
 
         Month-specific scalar version of `eligibility_group` for July (month 07).
       month: 7
@@ -3053,6 +3102,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3164,9 +3214,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_08)
 
         Month-specific scalar version of `eligibility_group` for August (month 08).
       month: 8
@@ -3176,6 +3228,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3287,9 +3340,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_09)
 
         Month-specific scalar version of `eligibility_group` for September (month 09).
       month: 9
@@ -3299,6 +3354,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3410,9 +3466,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_10)
 
         Month-specific scalar version of `eligibility_group` for October (month 10).
       month: 10
@@ -3422,6 +3480,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3533,9 +3592,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_11)
 
         Month-specific scalar version of `eligibility_group` for November (month 11).
       month: 11
@@ -3545,6 +3606,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3656,9 +3718,11 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           adult_section_1115
           section_1115_or_other_expansion
           limited_or_other
-          not_eligible
+          not_eligible = not eligible this month (MAX 00; TAF blank or 00)
           unknown
-          NULL = missing source value / unrecognized value
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized MAX code, or MAX ZZ (2014-2015: T-MSIS eligibility group reported but no
+            MAS/BOE group; see eligibility_group_tmsis_mo_12)
 
         Month-specific scalar version of `eligibility_group` for December (month 12).
       month: 12
@@ -3668,6 +3732,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 'not_eligible'
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             /* MAX */
@@ -3745,9 +3810,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_01)
 
         Month-specific scalar version of `disability_ind` for January (month 01). Independently
         derived per month, not an any-month aggregate.
@@ -3758,6 +3824,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -3786,9 +3853,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_02)
 
         Month-specific scalar version of `disability_ind` for February (month 02). Independently
         derived per month, not an any-month aggregate.
@@ -3799,6 +3867,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -3827,9 +3896,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_03)
 
         Month-specific scalar version of `disability_ind` for March (month 03). Independently
         derived per month, not an any-month aggregate.
@@ -3840,6 +3910,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -3868,9 +3939,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_04)
 
         Month-specific scalar version of `disability_ind` for April (month 04). Independently
         derived per month, not an any-month aggregate.
@@ -3881,6 +3953,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -3909,9 +3982,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_05)
 
         Month-specific scalar version of `disability_ind` for May (month 05). Independently
         derived per month, not an any-month aggregate.
@@ -3922,6 +3996,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -3950,9 +4025,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_06)
 
         Month-specific scalar version of `disability_ind` for June (month 06). Independently
         derived per month, not an any-month aggregate.
@@ -3963,6 +4039,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -3991,9 +4068,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_07)
 
         Month-specific scalar version of `disability_ind` for July (month 07). Independently
         derived per month, not an any-month aggregate.
@@ -4004,6 +4082,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -4032,9 +4111,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_08)
 
         Month-specific scalar version of `disability_ind` for August (month 08). Independently
         derived per month, not an any-month aggregate.
@@ -4045,6 +4125,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -4073,9 +4154,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_09)
 
         Month-specific scalar version of `disability_ind` for September (month 09).
         Independently derived per month, not an any-month aggregate.
@@ -4086,6 +4168,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -4114,9 +4197,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_10)
 
         Month-specific scalar version of `disability_ind` for October (month 10). Independently
         derived per month, not an any-month aggregate.
@@ -4127,6 +4211,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -4155,9 +4240,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_11)
 
         Month-specific scalar version of `disability_ind` for November (month 11). Independently
         derived per month, not an any-month aggregate.
@@ -4168,6 +4254,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -4196,9 +4283,10 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
           2 = aged_or_disabled (TAF only -- source cannot distinguish aged vs. disabled at
             this code's granularity; MAX never produces this value, since MAX's own MAS/BOE
             scheme always splits aged from disabled)
-          NULL = missing source value, unrecognized code (incl. TAF codes outside the
-            codebook's valid list 01-76), or MAX code 99 (Medicare/eligibility status unknown --
-            not evidence of either disability status)
+          NULL = MAX blank, source variable absent (MAX 1999-2004, or a file without the column),
+            unrecognized code (incl. TAF codes other than 00 outside the valid list), MAX code 99
+            (Medicare/eligibility status unknown), or MAX ZZ (2014-2015; see
+            eligibility_group_tmsis_mo_12)
 
         Month-specific scalar version of `disability_ind` for December (month 12). Independently
         derived per month, not an any-month aggregate.
@@ -4209,6 +4297,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       cast:
         "*": >
           CASE
+            WHEN source_type = 'taf' AND NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN 0
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
@@ -4287,6 +4376,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for January (month 1).
         MAX-only companion to eligibility_group_mo_01.
+      month: 1
       source:
         - TMSIS_ELG_GRP_MO_1
       type: VARCHAR
@@ -4387,6 +4477,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for February (month 2).
         MAX-only companion to eligibility_group_mo_02.
+      month: 2
       source:
         - TMSIS_ELG_GRP_MO_2
       type: VARCHAR
@@ -4487,6 +4578,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for March (month 3). MAX-only
         companion to eligibility_group_mo_03.
+      month: 3
       source:
         - TMSIS_ELG_GRP_MO_3
       type: VARCHAR
@@ -4587,6 +4679,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for April (month 4). MAX-only
         companion to eligibility_group_mo_04.
+      month: 4
       source:
         - TMSIS_ELG_GRP_MO_4
       type: VARCHAR
@@ -4687,6 +4780,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for May (month 5). MAX-only
         companion to eligibility_group_mo_05.
+      month: 5
       source:
         - TMSIS_ELG_GRP_MO_5
       type: VARCHAR
@@ -4787,6 +4881,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for June (month 6). MAX-only
         companion to eligibility_group_mo_06.
+      month: 6
       source:
         - TMSIS_ELG_GRP_MO_6
       type: VARCHAR
@@ -4887,6 +4982,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for July (month 7). MAX-only
         companion to eligibility_group_mo_07.
+      month: 7
       source:
         - TMSIS_ELG_GRP_MO_7
       type: VARCHAR
@@ -4987,6 +5083,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for August (month 8).
         MAX-only companion to eligibility_group_mo_08.
+      month: 8
       source:
         - TMSIS_ELG_GRP_MO_8
       type: VARCHAR
@@ -5087,6 +5184,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for September (month 9).
         MAX-only companion to eligibility_group_mo_09.
+      month: 9
       source:
         - TMSIS_ELG_GRP_MO_9
       type: VARCHAR
@@ -5187,6 +5285,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for October (month 10).
         MAX-only companion to eligibility_group_mo_10.
+      month: 10
       source:
         - TMSIS_ELG_GRP_MO_10
       type: VARCHAR
@@ -5287,6 +5386,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for November (month 11).
         MAX-only companion to eligibility_group_mo_11.
+      month: 11
       source:
         - TMSIS_ELG_GRP_MO_11
       type: VARCHAR
@@ -5387,6 +5487,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
 
         Month-specific scalar version of `eligibility_group_tmsis` for December (month 12).
         MAX-only companion to eligibility_group_mo_12.
+      month: 12
       source:
         - TMSIS_ELG_GRP_MO_12
       type: VARCHAR
@@ -6199,7 +6300,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6249,7 +6350,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6299,7 +6400,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6349,7 +6450,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6399,7 +6500,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6449,7 +6550,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6499,7 +6600,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6549,7 +6650,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6599,7 +6700,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6649,7 +6750,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6699,7 +6800,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
@@ -6749,7 +6850,7 @@ columns:  # IN lists of 5+ constants are written as list_contains([...], x), sho
       description: >-
         Monthly scope of Medicaid/CHIP benefits (restricted benefits code), raw code preserved
         as-is (not translated to a descriptive label). 12 elements, January to December. Source:
-        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBNN in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
+        MAX EL_RSTRCT_BNFT_FLG_N (RSTDBN1-RSTDBN12 in 1999-2004) / TAF RSTRCTD_BNFTS_CD_NN.
 
         Codebook:
           0 = not eligible for Medicaid or CHIP this month
