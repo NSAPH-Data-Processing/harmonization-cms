@@ -285,16 +285,22 @@ def prepare_claims(
                          f"{cross_year}. Not expected in TAF (IP-R06); check the extract.")
     # Rows with NULL claim_id: one copy of rows identical but for raw_filename in a year file, as
     # for claim_ids (IP-R46 b); otherwise they would link by their equal dates and be summed twice
+    # Each group keeps its copy from the first-sorting file. The ROW_NUMBER picks rowids only and the
+    # rows are fetched by a semi-join, so the window sorts keys, not whole rows: `DISTINCT ON ... *`
+    # ran out of memory (IP-R55 a). Same rows: copies tied on raw_filename are identical (the
+    # IP-R07 check above; for NULL claim_id, by the partition)
     cmp_sql = ", ".join(compare)
     conn.execute(f"""
         CREATE OR REPLACE TABLE stay_claims AS
-        (SELECT DISTINCT ON ({cmp_sql}, _file_year) * FROM stay_filtered
-         WHERE claim_id IS NULL
-         ORDER BY {cmp_sql}, _file_year, raw_filename)
+        (SELECT * FROM stay_filtered WHERE rowid IN (SELECT rid FROM (
+            SELECT rowid AS rid,
+                   ROW_NUMBER() OVER (PARTITION BY {cmp_sql}, _file_year ORDER BY raw_filename) AS rn
+            FROM stay_filtered WHERE claim_id IS NULL) WHERE rn = 1))
         UNION ALL BY NAME
-        (SELECT DISTINCT ON (_file_year, claim_id) * FROM stay_filtered
-         WHERE claim_id IS NOT NULL
-         ORDER BY _file_year, claim_id, raw_filename)
+        (SELECT * FROM stay_filtered WHERE rowid IN (SELECT rid FROM (
+            SELECT rowid AS rid,
+                   ROW_NUMBER() OVER (PARTITION BY _file_year, claim_id ORDER BY raw_filename) AS rn
+            FROM stay_filtered WHERE claim_id IS NOT NULL) WHERE rn = 1))
     """)
     diag["claims_duplicate_copies_removed"] = (_count(conn, "stay_filtered WHERE claim_id IS NOT NULL")
                                                - _count(conn, "stay_claims WHERE claim_id IS NOT NULL"))
