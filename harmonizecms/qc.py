@@ -72,6 +72,74 @@ def _resolve_template(path_template: str, *, basepath: str, crosswalks_path: Opt
     return resolved
 
 
+def expected_output_columns(table_cfg: dict) -> list[str]:
+    """Output columns of a table: the stay columns for a table with a `rollup:` block, else the YAML's."""
+    if table_cfg.get("rollup"):
+        from .stays import STAY_COLUMNS
+        return list(STAY_COLUMNS)
+    return [list(c.keys())[0] for c in table_cfg.get("columns", [])]
+
+
+def _current_build_id(out_dir: str, table_name: str) -> tuple[Optional[str], list[str]]:
+    """build_id of the stay build in `out_dir`/_build (None, with a warning, when it is missing)."""
+    build_run = _safe_load_json(os.path.join(out_dir, "_build", f"{table_name}_stays.run.json"))
+    if not build_run:
+        return None, [f"Stay build run.json _build/{table_name}_stays.run.json not found next to the output"]
+    return build_run.get("build_id"), []
+
+
+def _year_build_check(out_dir: str, table_name: str, year: int) -> tuple[Optional[str], Optional[str], list[str]]:
+    """
+    The yearly qc's build check (IP-R55 e, IP-R56 b): this year's `rollup.build_id` against the
+    current stay build. Other years are not read (they may be mid-rerun); check_rollup_builds
+    compares all years. Returns (year's build_id, current build_id, warnings).
+    """
+    run = _safe_load_json(os.path.join(out_dir, f"{table_name}_{year}.run.json")) or {}
+    build_id = (run.get("rollup") or {}).get("build_id")
+    current, warnings = _current_build_id(out_dir, table_name)
+    if current is not None and build_id != current:
+        warnings.append(f"Year {year} output is from stay build {build_id}, not the current build {current}: "
+                        f"re-run the year")
+    return build_id, current, warnings
+
+
+def check_rollup_builds(output_path: str, table_name: str, years: Optional[list[int]] = None,
+                        out_file: Optional[str] = None) -> dict:
+    """
+    The final check of a rollup table, after every year is done (IP-R55 e, IP-R56 b): every yearly
+    run.json (`years`, else every `{table}_{year}.run.json` in `output_path`) has the current stay
+    build's build_id. Warnings name each year with its id. Writes `out_file` (default
+    `{output_path}/{table}_builds.json`); never raises on a mismatch.
+    """
+    import glob
+    import re
+
+    if years is None:
+        rx = re.compile(re.escape(table_name) + r"_(\d+)\.run\.json")
+        years = sorted(int(m.group(1)) for p in glob.glob(os.path.join(glob.escape(output_path),
+                                                                         f"{glob.escape(table_name)}_*.run.json"))
+                       if (m := rx.fullmatch(os.path.basename(p))))
+    current, warnings = _current_build_id(output_path, table_name)
+    build_ids: dict[str, Any] = {}
+    for y in sorted(int(y) for y in years):
+        run = _safe_load_json(os.path.join(output_path, f"{table_name}_{y}.run.json"))
+        if run is None:
+            warnings.append(f"Year {y}: {table_name}_{y}.run.json not found")
+        build_ids[str(y)] = ((run or {}).get("rollup") or {}).get("build_id")
+    by_year = ", ".join(f"{y}: {i}" for y, i in build_ids.items())
+    if len(set(build_ids.values())) > 1:
+        warnings.append(f"Yearly outputs come from more than one stay build ({by_year})")
+    if current is not None and any(i != current for i in build_ids.values()):
+        warnings.append(f"Yearly outputs not from the current stay build {current} ({by_year})")
+    result = {"status": "warning" if warnings else "ok", "table": table_name,
+              "checked_utc": datetime.now(timezone.utc).isoformat(), "current_build_id": current,
+              "build_ids": build_ids, "warnings": warnings}
+    out_file = out_file or os.path.join(output_path, f"{table_name}_builds.json")
+    with open(out_file, "w") as f:
+        json.dump(result, f, indent=2)
+    return result
+
+
 def run_qc(
     table_config_path: str,
     basepath: str,
@@ -188,10 +256,16 @@ def run_qc(
         schema_before_lower = _schema_lower(schema_before)
         schema_after_lower = _schema_lower(schema_after)
 
-        expected_out_cols = [list(c.keys())[0] for c in table_cfg.get("columns", [])]
+        rollup = table_cfg.get("rollup")
+        expected_out_cols = expected_output_columns(table_cfg)
         missing_out_cols = [c for c in expected_out_cols if c.lower() not in schema_after_lower]
         if missing_out_cols:
             qc["warnings"].append(f"Missing expected output columns: {missing_out_cols}")
+        if rollup:
+            expected_lower = {c.lower() for c in expected_out_cols}
+            extra_out_cols = [c for c in schema_after if c.lower() not in expected_lower]
+            if extra_out_cols:
+                qc["warnings"].append(f"Output columns not in the stay output: {extra_out_cols}")
 
         mapping_rows = []
         for col in table_cfg.get("columns", []):
@@ -241,7 +315,28 @@ def run_qc(
                     row["strategy"] = "null_fallback"
                     row["note"] = "No source candidate found in input schema"
 
+            if rollup and out_col.lower() not in expected_lower:
+                # Read by the stay rollup but not in its output (IP-R54 g)
+                row["note"] = f"resolved_strategy={row['strategy']}" + (f"; {row['note']}" if row["note"] else "")
+                row["strategy"] = "dropped_by_rollup"
             mapping_rows.append(row)
+
+        if rollup:
+            # Columns the stay rollup adds (harmonizecms/stays.py)
+            yaml_cols = {list(c.keys())[0].lower() for c in table_cfg.get("columns", [])}
+            for out_col in expected_out_cols:
+                if out_col.lower() in yaml_cols:
+                    continue
+                mapping_rows.append({
+                    "output_col": out_col,
+                    "kind": "",
+                    "strategy": "rollup",
+                    "chosen_source": "",
+                    "chosen_sources": "",
+                    "input_type": "",
+                    "output_type": schema_after.get(out_col, ""),
+                    "note": "added by the stay rollup",
+                })
 
         with open(mapping_csv_path, "w", newline="") as f:
             w = csv.DictWriter(
@@ -274,6 +369,13 @@ def run_qc(
         run_metrics = _safe_load_json(run_metrics_path)
         if run_metrics:
             qc["harmonize_run"] = run_metrics
+
+        if rollup:
+            build_id, current, build_warnings = _year_build_check(os.path.dirname(output_parquet_path), table_name,
+                                                                  year)
+            qc["build_id"] = build_id
+            qc["current_build_id"] = current
+            qc["warnings"].extend(build_warnings)
 
         # ---------- Crosswalk QA/QC ----------
         # We do not re-run joins. We assess join success using the *added output columns*.

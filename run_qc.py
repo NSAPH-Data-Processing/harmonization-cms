@@ -6,7 +6,9 @@ import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from harmonizecms.qc import run_qc
+import yaml
+
+from harmonizecms.qc import check_rollup_builds, run_qc
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,9 +18,27 @@ def main(cfg: DictConfig) -> None:
     LOGGER.info("Config:\n%s", OmegaConf.to_yaml(cfg))
 
     table = str(cfg.table)
-    year = int(cfg.year)
-
     table_cfg_path = cfg.tables[table]
+
+    # ++mode=builds: after every year is done, check all yearly outputs of a rollup table come from
+    # the current stay build (IP-R56 b). Default: QC one year.
+    mode = str(cfg.get("mode", "year"))
+    if mode == "builds":
+        with open(table_cfg_path, encoding="utf-8") as f:
+            table_cfg = yaml.safe_load(f) or {}
+        table_name = table_cfg.get("table_name") or table_cfg.get("name") or table
+        outdir = str(cfg.paths.output_path)
+        years = [int(y) for y in cfg.years] if cfg.get("years") else None
+        result = check_rollup_builds(outdir, table_name, years,
+                                     out_file=os.path.join(outdir, f"{table}_builds.json"))
+        for w in result["warnings"]:
+            LOGGER.warning(w)
+        LOGGER.info("Build check status=%s", result["status"])
+        return
+    if mode != "year":
+        raise ValueError(f"mode must be 'year' or 'builds', not {mode!r}")
+
+    year = int(cfg.year)
 
     # IMPORTANT:
     # cfg.paths.output_path is treated as the *actual* output directory for this run.
