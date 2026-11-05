@@ -5,7 +5,7 @@ path_pattern:
   - "{basepath}/{year}/taf_demog_elig_base_*/part-*.parquet"
   - "{basepath}/{year}/maxdata_*_ps/part-*.parquet"
 
-columns:
+columns:  # IN lists of 5+ constants are written as list_contains([...], x), shorter lists stay IN: duckdb plans an IN with 5+ constants as a hash join (PS-D32, PS-D33)
   - bene_id:
       source:
         - BENE_ID
@@ -318,8 +318,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -362,12 +362,12 @@ columns:
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
             WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 0
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '02', '03', '04', '05', '06', '08') THEN 1
+            WHEN list_contains(['01', '02', '03', '04', '05', '06', '08'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 1
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN 1
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN 0
             WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '10' THEN 0
 
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('07', '51', '52', '53', '54', '55', '56', '57', '58', '59') THEN 1
+            WHEN source_type = 'max' AND list_contains(['07', '51', '52', '53', '54', '55', '56', '57', '58', '59'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 1
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 0
 
             ELSE NULL
@@ -415,8 +415,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -478,8 +478,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -541,8 +541,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -604,8 +604,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -667,8 +667,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -730,8 +730,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -793,8 +793,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -856,8 +856,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -919,8 +919,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -982,8 +982,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -1045,8 +1045,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -1108,8 +1108,8 @@ columns:
           CASE
             WHEN NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN NULL
 
-            WHEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
-              IN ('00', '01', '02', '03', '04', '05', '06', '08', '10')
+            WHEN list_contains(['00', '01', '02', '03', '04', '05', '06', '08', '10'],
+              LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0'))
               THEN LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '09' THEN '09'
@@ -1166,7 +1166,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1176,9 +1176,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1223,7 +1223,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1233,9 +1233,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1280,7 +1280,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1290,9 +1290,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1337,7 +1337,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1347,9 +1347,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1394,7 +1394,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1404,9 +1404,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1451,7 +1451,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1461,9 +1461,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1508,7 +1508,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1518,9 +1518,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1565,7 +1565,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1575,9 +1575,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1622,7 +1622,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1632,9 +1632,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1679,7 +1679,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1689,9 +1689,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1736,7 +1736,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1746,9 +1746,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -1793,7 +1793,7 @@ columns:
             WHEN source_type = 'taf' AND NULLIF(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), '') IS NULL THEN 'ffs'
 
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '00' THEN 'not_eligible'
-            WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '06', '07', '08', '09') THEN 'comprehensive'
+            WHEN source_type = 'max' AND list_contains(['01', '06', '07', '08', '09'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'comprehensive'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '12') THEN 'other_managed_care'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '10', '13', '14') THEN 'dental'
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('03', '11') THEN 'behavioral_health'
@@ -1803,9 +1803,9 @@ columns:
             WHEN source_type = 'max' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '99' THEN 'unknown'
 
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('01', '04') THEN 'comprehensive'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('05', '06', '07', '15', '16', '17', '18', '20') THEN 'other_managed_care'
+            WHEN source_type = 'taf' AND list_contains(['05', '06', '07', '15', '16', '17', '18', '20'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'other_managed_care'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '14' THEN 'dental'
-            WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('08', '09', '10', '11', '12', '13', '19') THEN 'behavioral_health'
+            WHEN source_type = 'taf' AND list_contains(['08', '09', '10', '11', '12', '13', '19'], LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0')) THEN 'behavioral_health'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') IN ('02', '03') THEN 'pccm'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '60' THEN 'aco'
             WHEN source_type = 'taf' AND LPAD(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)), 2, '0') = '70' THEN 'health_home'
@@ -2351,25 +2351,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -2474,25 +2474,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -2597,25 +2597,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -2720,25 +2720,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -2843,25 +2843,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -2966,25 +2966,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3089,25 +3089,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3212,25 +3212,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3335,25 +3335,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3458,25 +3458,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3581,25 +3581,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3704,25 +3704,25 @@ columns:
             /* TAF (same code-to-category table as eligibility_group_tmsis_mo_*) */
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN source_type = 'taf' AND list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN source_type = 'taf' AND list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN source_type = 'taf' AND list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN source_type = 'taf' AND list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -3761,14 +3761,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -3802,14 +3802,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -3843,14 +3843,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -3884,14 +3884,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -3925,14 +3925,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -3966,14 +3966,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4007,14 +4007,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4048,14 +4048,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4089,14 +4089,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4130,14 +4130,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4171,14 +4171,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4212,14 +4212,14 @@ columns:
             WHEN NULLIF(TRIM(CAST({column_name} AS VARCHAR)), '') IS NULL THEN NULL
 
             WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '99' THEN NULL
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('12', '22', '32', '42', '52') THEN 1
-            WHEN source_type = 'max' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN
-              ('00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55')
+            WHEN source_type = 'max' AND list_contains(['12', '22', '32', '42', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'max' AND list_contains(
+              ['00', '11', '14', '15', '16', '17', '21', '24', '25', '31', '34', '35', '41', '44', '45', '48', '51', '54', '55'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0'))
               THEN 0
             WHEN source_type = 'max' AND UPPER(TRIM(CAST({column_name} AS VARCHAR))) = '3A' THEN 0
 
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60') THEN 1
-            WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59') THEN 2
+            WHEN source_type = 'taf' AND list_contains(['16', '19', '20', '21', '22', '24', '45', '47', '48', '49', '50', '60'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 1
+            WHEN source_type = 'taf' AND list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46', '59'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 2
             WHEN source_type = 'taf' AND LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 0
             WHEN source_type = 'taf' AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) BETWEEN 1 AND 76 AND TRY_CAST(TRIM(CAST({column_name} AS VARCHAR)) AS INTEGER) NOT IN (10, 57, 58) THEN 0
 
@@ -4298,25 +4298,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4398,25 +4398,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4498,25 +4498,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4598,25 +4598,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4698,25 +4698,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4798,25 +4798,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4898,25 +4898,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -4998,25 +4998,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -5098,25 +5098,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -5198,25 +5198,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -5298,25 +5298,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -5398,25 +5398,25 @@ columns:
 
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '00' THEN 'not_eligible'
 
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('01', '02', '03', '04', '27', '33') THEN 'parent_caretaker'
+            WHEN list_contains(['01', '02', '03', '04', '27', '33'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'parent_caretaker'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '05' THEN 'pregnant'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '06' THEN 'deemed_newborn'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('07', '28', '31') THEN 'low_income_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('08', '29', '30') THEN 'foster_care_or_adoption'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '09' THEN 'former_foster_care'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46') THEN 'aged_or_disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('16', '19', '20', '21', '22') THEN 'disabled_cash_or_ssi'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('45', '47', '48', '49', '50') THEN 'disabled_other'
+            WHEN list_contains(['11', '12', '13', '14', '15', '17', '18', '37', '38', '40', '41', '46'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'aged_or_disabled_cash_or_ssi'
+            WHEN list_contains(['16', '19', '20', '21', '22'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_cash_or_ssi'
+            WHEN list_contains(['45', '47', '48', '49', '50'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'disabled_other'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('23', '24', '25', '26') THEN 'medicare_savings_program'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '34' THEN 'breast_cervical_cancer'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('35', '70') THEN 'family_planning'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('39', '42', '43', '44', '51', '52') THEN 'hcbs_or_institutional'
+            WHEN list_contains(['39', '42', '43', '44', '51', '52'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'hcbs_or_institutional'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '53' THEN 'pregnant_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('54', '55') THEN 'child_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '56' THEN 'adult_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '59' THEN 'aged_or_disabled_medically_needy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '60' THEN 'disabled_medically_needy'
-            WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('61', '62', '63', '65', '66') THEN 'chip_child'
+            WHEN list_contains(['61', '62', '63', '65', '66'], LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0')) THEN 'chip_child'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') = '64' THEN 'conception_to_birth'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('67', '68') THEN 'chip_pregnancy'
             WHEN LPAD(TRIM(CAST({column_name} AS VARCHAR)), 2, '0') IN ('69', '71') THEN 'section_1115_or_other_expansion'
@@ -6235,10 +6235,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6285,10 +6285,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6335,10 +6335,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6385,10 +6385,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6435,10 +6435,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6485,10 +6485,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6535,10 +6535,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6585,10 +6585,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6635,10 +6635,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6685,10 +6685,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6735,10 +6735,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
@@ -6785,10 +6785,10 @@ columns:
           CASE
             WHEN NULLIF(UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))), '') IS NULL THEN NULL
 
-            WHEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN list_contains(['0', '1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) = '8' THEN 'D'
-            WHEN source_type = 'max' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('9', 'W', 'X', 'Y', 'Z') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
+            WHEN source_type = 'max' AND list_contains(['9', 'W', 'X', 'Y', 'Z'], UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))) THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
             WHEN source_type = 'taf' AND UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1))) IN ('D', 'E', 'F', 'G') THEN UPPER(TRIM(SPLIT_PART(CAST({column_name} AS VARCHAR), '.', 1)))
 
             ELSE NULL
