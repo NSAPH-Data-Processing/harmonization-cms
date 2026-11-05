@@ -48,6 +48,14 @@ per-state first TAF year from cutover.yaml (`load_first_taf_year`). Its row orde
 Input: a table of harmonized TAF claim rows (the ip.yaml columns) plus `_file_year`, the year
 file each row came from. It must hold rollup rows only (`rollup.rows`, TAF); other rows stop the
 run. Output: table `stay_claims`, one row per final-action claim.
+
+Pipeline wiring (IP-R54, IP-R55; harmonizer.py): `build_table_stays` reads the TAF files of all the
+run's years (`rollup.path_pattern`), runs steps 1-4 once in a file-backed duckdb (step-1 tables
+dropped by `drop_prepare_tables`) and writes `{output}/_build/{table}_stays.parquet` plus its
+run.json. Each yearly run of the table then takes the MAX rows of its year through
+`max_rows_to_stays` (STAY_COLUMNS with `stay_column_types`; MAX crossover and cutover flags,
+IP-R42 12, IP-R54 b), adds the built stays whose `year` is that year, and counts admissions-key
+sharing by MAX/TAF mix (`admissions_key_sharing`, IP-R54 c).
 """
 from __future__ import annotations
 
@@ -162,6 +170,16 @@ NEW_STAY_COLUMNS = ("claim_ids", "n_claims_combined", "n_other_type_claims", "cr
 STAY_RULE_INPUTS = [c for c in STAY_COLUMNS if c not in NEW_STAY_COLUMNS]  # = ip.yaml output columns
 # Step 4 temp tables
 STAY_TEMP_TABLES = ("_stay_rank", "_stay_agg", "_stay_codes_diagnoses", "_stay_codes_procedures")
+
+# Wiring (IP-R54 d). Types of the stay columns that are not ip.yaml columns; the others take their
+# ip.yaml `type`
+NEW_STAY_TYPES = {"claim_ids": "VARCHAR[]", "n_claims_combined": "BIGINT", "n_other_type_claims": "BIGINT",
+                  "crossover_ind": "BOOLEAN", "cutover_ind": "BOOLEAN", "amp_msis_id_ind": "BOOLEAN"}
+# MAX row crossover (IP-R35 e, IP-R42 12; MAX dictionary EL_MDCR_XOVR_CLM_BSD_CD): Medicaid paid
+# Medicare coinsurance or deductible; NULL amounts count as $0, so never NULL
+MAX_CROSSOVER = "COALESCE(mdcr_coinsur_pymt_amt > 0 OR mdcr_ded_pymt_amt > 0, FALSE)"
+# Tables prepare_claims leaves besides stay_claims (the family tables only with Illinois rows)
+PREPARE_TABLES = ("stay_filtered", "family_records", "family_netted")
 
 
 def _count(conn: duckdb.DuckDBPyConnection, table_and_where: str) -> int:
@@ -1312,3 +1330,118 @@ def _aggregate_diagnostics(conn: duckdb.DuckDBPyConnection, diag: dict, crossove
                 f"capped {total(diag['stays_cvrd_days_capped'])}); year fallbacks "
                 f"{total(diag['stays_year_fallback'])}, year before first TAF year "
                 f"{total(diag['stays_year_before_first_taf_year'])}; cutover flagged {total(diag['stays_cutover'])}")
+
+
+# ---------------------------------------------------------------------------------------------
+# Pipeline wiring (IP-R54): build cleanup, stay column types, MAX rows, key sharing
+# ---------------------------------------------------------------------------------------------
+
+def drop_prepare_tables(conn: duckdb.DuckDBPyConnection, input_table: str = "stay_input") -> None:
+    """
+    Drops `input_table` and the PREPARE_TABLES prepare_claims leaves behind, keeping `stay_claims`
+    (IP-R54 d: the build drops step-1 tables before linking). Missing tables are skipped.
+    """
+    if input_table.lower() == "stay_claims":
+        raise ValueError("drop_prepare_tables would drop stay_claims")
+    for t in (input_table, *PREPARE_TABLES):
+        conn.execute(f"DROP TABLE IF EXISTS {t}")
+
+
+def stay_column_types(conn: duckdb.DuckDBPyConnection, table_cfg: dict) -> dict[str, str]:
+    """
+    {column: duckdb type name} of the stay output, in STAY_COLUMNS order (IP-R54 d): NEW_STAY_TYPES
+    for the stay columns, the table YAML's `type` for the others, normalized by duckdb (INT ->
+    INTEGER). Raises ValueError when a STAY_RULE_INPUTS column is missing from the YAML or has no
+    `type`.
+    """
+    yaml_types: dict[str, str | None] = {}
+    for col in table_cfg.get("columns") or []:
+        name = list(col.keys())[0]
+        yaml_types[name] = (col[name] or {}).get("type")
+    missing = [c for c in STAY_RULE_INPUTS if c not in yaml_types]
+    untyped = [c for c in STAY_RULE_INPUTS if c in yaml_types and not yaml_types[c]]
+    if missing or untyped:
+        raise ValueError(f"Stay columns missing from the table YAML {missing} or without a `type` {untyped}")
+    types = {c: NEW_STAY_TYPES.get(c) or yaml_types[c] for c in STAY_COLUMNS}
+    sel = ", ".join(f"CAST(NULL AS {types[c]}) AS {c}" for c in STAY_COLUMNS)
+    return {r[0]: r[1] for r in conn.execute(f"DESCRIBE SELECT {sel}").fetchall()}
+
+
+def max_rows_to_stays(
+    conn: duckdb.DuckDBPyConnection,
+    in_table: str,
+    year: int,
+    rollup_cfg: dict,
+    first_taf_year: dict[str, int],
+    types: dict[str, str],
+    out_table: str,
+) -> dict:
+    """
+    MAX rows (already stays) of run year `year` from `in_table` (harmonized table-YAML columns)
+    -> table `out_table` with columns STAY_COLUMNS of `types` (`stay_column_types`). Returns
+    run.json diagnostics.
+
+    Stay rule inputs pass through unchanged (claim_id, the Illinois family columns and the helper
+    columns are dropped; IP-R35 c). claim_ids and n_claims_combined are NULL, n_other_type_claims
+    0, amp_msis_id_ind FALSE, crossover_ind MAX_CROSSOVER (IP-R42 12, IP-R38). cutover_ind
+    (IP-R30, IP-R40, IP-R54 b), from the run year (= the MAX file year): NULL for a NULL state or
+    one not in `first_taf_year`; FALSE outside the state's flagged year (first TAF year - 1); NULL
+    with a NULL end date; else end date Dec 31 of that year and status 30 or NULL.
+
+    Raises ValueError when a row passes `rollup_cfg['rows']` (TAF rows belong to the build) or on
+    a bad `first_taf_year`.
+    """
+    year = int(year)
+    n_rollup = _count(conn, f"{in_table} WHERE COALESCE(({rollup_cfg['rows']}), FALSE)")
+    if n_rollup:
+        raise ValueError(f"{n_rollup} rows of the non-rollup files of {year} pass rollup rows "
+                         f"`{rollup_cfg['rows']}`: files outside rollup.path_pattern hold rollup rows; "
+                         f"check rollup.path_pattern")
+    _check_first_taf_year(first_taf_year)
+    if list(types) != STAY_COLUMNS:
+        raise ValueError("types must list STAY_COLUMNS in order (use stay_column_types)")
+    ft = _first_taf_case(first_taf_year, "state")
+    cutover = (f"CASE WHEN {ft} IS NULL THEN NULL "
+               f"WHEN {year} <> {ft} - 1 THEN FALSE "
+               f"WHEN srvc_end_dt IS NULL THEN NULL "
+               f"ELSE srvc_end_dt = DATE '{year}-12-31' AND (patient_status_cd = '30' OR patient_status_cd IS NULL) END")
+    new = {"claim_ids": "NULL", "n_claims_combined": "NULL", "n_other_type_claims": "0",
+           "crossover_ind": MAX_CROSSOVER, "cutover_ind": cutover, "amp_msis_id_ind": "FALSE"}
+    if set(new) != set(NEW_STAY_COLUMNS):
+        raise RuntimeError("max_rows_to_stays has no rule for some stay columns")
+    sel = ",\n            ".join(f"CAST({new.get(c, c)} AS {types[c]}) AS {c}" for c in STAY_COLUMNS)
+    conn.execute(f"CREATE OR REPLACE TABLE {out_table} AS SELECT {sel} FROM {in_table}")
+
+    def by_state(where: str) -> dict:
+        return _nested_counts(conn, f"SELECT state, COUNT(*) FROM {out_table} WHERE {where} GROUP BY ALL ORDER BY ALL")
+    diag: dict = {
+        "max_rows": _count(conn, out_table),
+        "max_rows_year_not_run_year": _count(conn, f"{out_table} WHERE year IS DISTINCT FROM {year}"),
+        "max_crossover": by_state("crossover_ind"),
+        "max_cutover": by_state("cutover_ind"),
+        "max_cutover_end_date_null": by_state(f"{ft} - 1 = {year} AND srvc_end_dt IS NULL"),
+        "max_cutover_state_not_in_table": by_state(f"{ft} IS NULL"),
+    }
+    present = {r[0] for r in conn.execute(f"SELECT DISTINCT state FROM {out_table}").fetchall()}
+    # C6 (IP-R40 Q2, IP-R54 c): a state whose flagged year this is, with no MAX rows
+    diag["max_cutover_states_no_rows_in_flagged_year"] = sorted(
+        s for s, y in first_taf_year.items() if y - 1 == year and s not in present)
+    if diag["max_rows_year_not_run_year"]:
+        LOGGER.warning(f"{diag['max_rows_year_not_run_year']} MAX rows have `year` other than the run year "
+                       f"{year}; cutover_ind uses the run year")
+    return diag
+
+
+def admissions_key_sharing(conn: duckdb.DuckDBPyConnection, table: str) -> dict:
+    """
+    Rows of `table` in groups of 2 or more sharing the IP-R35 a admissions key, by the group's mix
+    (IP-R54 c): {"max_max": {state: rows}, "max_taf": {...}, "taf_taf": {...}}. MAX means
+    source_type IS DISTINCT FROM 'taf'. NULL key parts group together, as in step 4.
+    """
+    key = ", ".join(ADMISSIONS_KEY)
+    shared = _nested_counts(conn, f"""
+        SELECT CASE WHEN n_taf = 0 THEN 'max_max' WHEN n_taf = n THEN 'taf_taf' ELSE 'max_taf' END, state, COUNT(*)
+        FROM (SELECT state, COUNT(*) OVER w AS n, COUNT(*) FILTER (WHERE source_type = 'taf') OVER w AS n_taf
+              FROM {table} WINDOW w AS (PARTITION BY {key}))
+        WHERE n > 1 GROUP BY ALL ORDER BY ALL""")
+    return {k: shared.get(k, {}) for k in ("max_max", "max_taf", "taf_taf")}

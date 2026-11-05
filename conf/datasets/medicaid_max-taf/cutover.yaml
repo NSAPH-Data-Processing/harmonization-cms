@@ -1,6 +1,6 @@
 # First TAF year per state (IP-R40): the first calendar year of the state's TAF files. TAF stays
 # admitted before Jan 1 of that year get cutover_ind TRUE (harmonizecms/stays.py aggregate_stays);
-# MAX rows are flagged in the state's year before it (later step). Keys are `state` postal codes.
+# MAX rows are flagged in the state's year before it (harmonizecms/stays.py max_rows_to_stays). Keys are `state` postal codes.
 # Both CCW tables give the same year for every state (docs/max-taf/ip/findings/cutover_years.md):
 # - CCW MAX user guide v2.9 (June 2026), App. C "MAX and TAF Availability by State and Year",
 #   docs/sources/max_taf_guidance/max_docs/ccw-max-user-guide.txt:1966-2040

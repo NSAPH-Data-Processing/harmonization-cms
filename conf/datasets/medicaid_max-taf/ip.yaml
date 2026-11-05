@@ -1,15 +1,23 @@
 table_name: ip
 description: >-
   Medicaid MAX-TAF inpatient (IP) files. A MAX row is a hospital stay (CMS already combined its
-  claims); a TAF row is one claim. The `rollup` block combines TAF claims into MAX-style stays
-  (in progress). Decisions: docs/max-taf/ip/decisions.md.
+  claims); a TAF row is one claim. The `rollup` block combines TAF claims into MAX-style stays,
+  built once over all years (mode=stays) and read by each year's run. Decisions:
+  docs/max-taf/ip/decisions.md.
 
 path_pattern:
   - "{basepath}/{year}/taf_inpatient_header_res000017155_req013731/part-*.parquet"
   - "{basepath}/{year}/maxdata_*_ip/part-*.parquet"
 
-# TAF claims -> stays (harmonizecms/stays.py). Built in steps (1-4 exist); not hooked into the harmonizer yet.
+# TAF claims -> stays (harmonizecms/stays.py). build_table_stays builds the stays of all years once
+# (`++mode=stays`, Snakemake rule build_stays); harmonize_table_year then writes each year's MAX rows
+# (same columns) plus that year's stays (IP-R54, IP-R55).
 rollup:
+  # The rollup's own (TAF) files; each entry must also be in path_pattern. The other files are MAX.
+  path_pattern:
+    - "{basepath}/{year}/taf_inpatient_header_res000017155_req013731/part-*.parquet"
+  # First TAF year per state (IP-R40); relative to this file's folder
+  cutover: cutover.yaml
   rows: "source_type = 'taf'"
   filters:
     # Service tracking claims: not in MAX (IP-R08). NULL claim type is kept.
@@ -64,7 +72,7 @@ columns:
   - year:
       description: >-
         File year, from the path. A late-December stay can sit in the next year's file. For TAF
-        stays the rollup will set it to the discharge year (IP-R05).
+        stays the rollup sets it to the discharge year (IP-R05); MAX rows keep the file year.
       source:
         - source_filename
       type: INT
