@@ -1,0 +1,51 @@
+# TEST FIXTURE ONLY. This is not the production mapping or an owner-approved
+# metric set. It uses synthetic data to exercise claim-level FFS Outpatient
+# field mapping across 2016-2018; it reads no CMS records.
+table_name: partb_outpatient_smoke
+description: "Synthetic smoke-test mapping for institutional FFS Outpatient claims."
+path_pattern:
+  - "{basepath}/{year}/op/part-*.parquet"
+
+columns:
+  - bene_id:
+      source: BENE_ID
+      type: VARCHAR
+      description: "CCW beneficiary identifier; synthetic value in this fixture."
+      reference: "https://resdac.org/cms-data/variables/encrypted-ccw-beneficiary-id"
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - claim_id:
+      source: CLM_ID
+      type: VARCHAR
+      description: "Claim identifier; retained as text in this fixture."
+      reference: "https://resdac.org/cms-data/files/op-ffs/data-documentation"
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - claim_from_date:
+      source: CLM_FROM_DT
+      type: DATE
+      description: "First day on the billing statement covering services; not necessarily the first service date for every product."
+      reference: "https://resdac.org/cms-data/variables/claim-date-ffs"
+      cast:
+        VARCHAR: "TRY_CAST({column_name} AS DATE)"
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - claim_thru_date:
+      source: CLM_THRU_DT
+      type: DATE
+      description: "Last day on the billing statement covering services; not necessarily the last service date for every product."
+      reference: "https://resdac.org/cms-data/variables/claim-through-date-ffs"
+      cast:
+        VARCHAR: "TRY_CAST({column_name} AS DATE)"
+        "*": "TRY_CAST({column_name} AS DATE)"
+
+  - claim_payment_amt:
+      source: CLM_PMT_AMT
+      type: DOUBLE
+      description: "Claim Medicare payment amount. No aggregation or revenue-center derivation is performed in this fixture."
+      reference: "https://resdac.org/cms-data/variables/claim-medicare-payment-amount"
+      cast:
+        VARCHAR: "TRY_CAST({column_name} AS DOUBLE)"
+        "*": "TRY_CAST({column_name} AS DOUBLE)"
