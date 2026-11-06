@@ -11,16 +11,37 @@ on:
         required: true
 
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'delete-*'
   pull_request:
+    branches:
+      - main
+      - 'delete-*'
+
+  # Branch/tag deletions. GitHub does not support `branches:` filtering on the
+  # `delete` event, so the branch filter (delete-* only) is enforced in the
+  # `delete-branch` job condition below. main is never deleted because it is
+  # the CodeCommit default branch.
+  delete:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Avoid overlapping runs on the same ref
+# Serialize runs that touch the same ref, and never cancel them.
+# NOTE: on `delete` events github.ref points at the default branch (main), not the
+# deleted branch, so a merge-to-main push and the subsequent delete-* branch
+# deletion share this group and run in arrival order (merge first, delete last).
+#   - `cancel-in-progress: false` lets the running run finish instead of being
+#     cancelled ("Canceling since a higher priority waiting request ... exists").
+#   - `queue: max` allows up to 100 pending runs to wait instead of a newer run
+#     replacing (cancelling) the previously pending one, so the deletion is not
+#     dropped when other runs queue up behind it.
+# (Requires github.com; `queue` is not available on GitHub Enterprise Server.)
 concurrency:
   group: inspector-and-sync-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+  queue: max
 
 # Default permissions for all jobs
 permissions:
@@ -31,6 +52,7 @@ permissions:
 jobs:
   # Job 1: Amazon Inspector Security Scan
   scan:
+    if: github.event_name != 'delete'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -130,6 +152,9 @@ jobs:
   # Job 2: Sync to CodeCommit (only runs if scan passes)
   sync:
     needs: scan
+    # Only sync real branch pushes (main/delete-*). Never push PR merge refs or
+    # handle deletes here (a separate job removes deleted branches).
+    if: github.event_name != 'pull_request' && github.event_name != 'delete'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -163,6 +188,54 @@ jobs:
       - name: Add CodeCommit remote
         run: git remote add codecommit "https://git-codecommit.${{ secrets.REGION }}.amazonaws.com/v1/repos/${{ secrets.REPO_NAME }}"
 
-      # 5. Push only main branch to CodeCommit
-      - name: Push main branch to CodeCommit
-        run: git push codecommit main
+      # 5. Push the triggering branch (main or delete-*) to CodeCommit
+      - name: Push ${{ github.ref_name }} branch to CodeCommit
+        run: git push codecommit "HEAD:refs/heads/${{ github.ref_name }}"
+
+  # Job 3: Delete the matching CodeCommit branch when a GitHub branch is deleted
+  delete-branch:
+    # Only handle delete-* branch deletions (not tags, not main). main is the
+    # CodeCommit default branch and cannot be deleted.
+    if: >-
+      github.event_name == 'delete' &&
+      github.event.ref_type == 'branch' &&
+      startsWith(github.event.ref, 'delete-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      id-token: write    # needed for OIDC to AWS
+      contents: read
+
+    steps:
+      # 1. Secure AWS Authentication using OIDC
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          role-session-name: DeleteCodeCommitBranch_${{ github.run_id }}
+          aws-region: ${{ secrets.REGION }}
+
+      # 2. Delete the branch in the matching CodeCommit repository
+      - name: Delete ${{ github.event.ref }} branch in CodeCommit
+        env:
+          BRANCH_NAME: ${{ github.event.ref }}
+        run: |
+          set -euo pipefail
+          echo "Branch '$BRANCH_NAME' was deleted in GitHub; removing it from CodeCommit..."
+          err_file="$(mktemp)"
+
+          if aws codecommit get-branch \
+               --repository-name "${{ secrets.REPO_NAME }}" \
+               --branch-name "$BRANCH_NAME" >/dev/null 2>"$err_file"; then
+            echo "Branch '$BRANCH_NAME' exists in CodeCommit; deleting it..."
+            aws codecommit delete-branch \
+              --repository-name "${{ secrets.REPO_NAME }}" \
+              --branch-name "$BRANCH_NAME"
+            echo "Deleted '$BRANCH_NAME' from CodeCommit."
+          elif grep -q "BranchDoesNotExistException" "$err_file"; then
+            echo "Branch '$BRANCH_NAME' does not exist in CodeCommit; nothing to do."
+          else
+            cat "$err_file" >&2
+            exit 1
+          fi
