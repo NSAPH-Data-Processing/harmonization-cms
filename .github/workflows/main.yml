@@ -130,6 +130,9 @@ jobs:
   # Job 2: Sync to CodeCommit (only runs if scan passes)
   sync:
     needs: scan
+    # Only the push-to-main event checks out a local `main` ref. PR and
+    # workflow_dispatch runs still scan, but must not sync to CodeCommit.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
