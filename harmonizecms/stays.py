@@ -203,6 +203,25 @@ def _nested_counts(conn: duckdb.DuckDBPyConnection, sql: str) -> dict:
     return out
 
 
+def _rename_table(conn: duckdb.DuckDBPyConnection, src: str, dst: str) -> bool:
+    """
+    Renames main-schema table `src` to `dst` (dropping an existing main `dst`) in place of a full
+    copy, and returns True. Returns False, changing nothing, when `src` isn't a main-schema base
+    table or a temp table is named `dst` (the caller then copies).
+    """
+    # A temp table is database 'temp', schema 'main' in duckdb_tables()
+    found = {("temp" if tmp else s, n.lower()) for s, n, tmp in conn.execute(
+        "SELECT schema_name, table_name, temporary FROM duckdb_tables() "
+        "WHERE database_name = current_database() OR temporary").fetchall()}
+    if ("main", src.lower()) not in found or ("temp", src.lower()) in found \
+            or ("temp", dst.lower()) in found or src.lower() == dst.lower():
+        return False
+    db = conn.execute("SELECT current_database()").fetchone()[0]
+    conn.execute(f'DROP TABLE IF EXISTS "{db}".main.{dst}')
+    conn.execute(f'ALTER TABLE "{db}".main.{src} RENAME TO {dst}')
+    return True
+
+
 def _sql_list(values) -> str:
     return ", ".join(f"'{v}'" for v in values)
 
@@ -242,15 +261,24 @@ def prepare_claims(
     Steps 1-4 above, from `input_table` into table `stay_claims`. Returns run.json diagnostics.
     Raises ValueError on input rows outside `rollup_cfg['rows']` (e.g. MAX rows), and on repeated
     claim_ids that disagree or that appear in two year files.
+
+    `input_table` is consumed: when no row fails a filter (or has a repeat), a step renames the
+    table instead of copying it, so a main-schema `input_table` may be gone afterwards (the build
+    drops it next anyway, `drop_prepare_tables`).
     """
     diag: dict = {}
     # The steps below are TAF rules (claim types, Illinois families, claim_id repeats): MAX rows
-    # must not reach them
-    n_outside = _count(conn, f"{input_table} WHERE NOT COALESCE(({rollup_cfg['rows']}), FALSE)")
+    # must not reach them. One pass: the row count, rows outside, and each filter's failures
+    filters = rollup_cfg.get("filters") or []
+    where = " AND ".join(f"COALESCE(({f}), FALSE)" for f in filters) or "TRUE"
+    n_input, n_outside, n_dropped, *per_filter = conn.execute(
+        f"SELECT COUNT(*), COUNT(*) FILTER (WHERE NOT COALESCE(({rollup_cfg['rows']}), FALSE)), "
+        f"COUNT(*) FILTER (WHERE NOT ({where}))"
+        + "".join(f", COUNT(*) FILTER (WHERE NOT COALESCE(({f}), FALSE))" for f in filters)
+        + f" FROM {input_table}").fetchone()
     if n_outside:
         raise ValueError(f"{n_outside} input rows fail rollup rows `{rollup_cfg['rows']}`; "
                          f"prepare_claims takes rollup rows only")
-    n_input = _count(conn, input_table)
     diag["claims_read"] = n_input
     file_years = [r[0] for r in conn.execute(
         f"SELECT DISTINCT _file_year FROM {input_table} ORDER BY 1").fetchall()]
@@ -263,13 +291,12 @@ def prepare_claims(
         ORDER BY 1
     """).fetchall()]
 
-    # 1. Claim-type filters, each counted on its own (a row failing two is counted under both)
-    filters = rollup_cfg.get("filters") or []
-    diag["claims_dropped_by_filter"] = {
-        f: _count(conn, f"{input_table} WHERE NOT COALESCE(({f}), FALSE)") for f in filters}
-    where = " AND ".join(f"COALESCE(({f}), FALSE)" for f in filters) or "TRUE"
-    conn.execute(f"CREATE OR REPLACE TABLE stay_filtered AS SELECT * FROM {input_table} WHERE {where}")
-    diag["claims_dropped_by_filters"] = n_input - _count(conn, "stay_filtered")
+    # 1. Claim-type filters, each counted on its own (a row failing two is counted under both).
+    # With nothing to drop, the table is renamed rather than copied
+    diag["claims_dropped_by_filter"] = dict(zip(filters, per_filter))
+    if n_dropped or not _rename_table(conn, input_table, "stay_filtered"):
+        conn.execute(f"CREATE OR REPLACE TABLE stay_filtered AS SELECT * FROM {input_table} WHERE {where}")
+    diag["claims_dropped_by_filters"] = n_dropped
     LOGGER.info(f"Claim-type filters dropped {diag['claims_dropped_by_filters']} of {n_input} claims")
 
     # 2. One row per claim_id. Copies within a year file must agree on everything but the file
@@ -277,18 +304,21 @@ def prepare_claims(
     # Only claim_ids repeated in a year file are compared (most occur once).
     cols = _columns(conn, "stay_filtered")
     compare = [c for c in cols if c not in ("claim_id", "raw_filename", "_file_year")]
+    conn.execute("""
+        CREATE OR REPLACE TEMP TABLE _stay_repeated AS
+        SELECT _file_year, claim_id FROM stay_filtered
+        WHERE claim_id IS NOT NULL
+        GROUP BY _file_year, claim_id HAVING COUNT(*) > 1
+    """)
+    n_repeated = _count(conn, "_stay_repeated")
     conflicts = conn.execute(f"""
-        WITH repeated AS (
-            SELECT _file_year, claim_id FROM stay_filtered
-            WHERE claim_id IS NOT NULL
-            GROUP BY _file_year, claim_id HAVING COUNT(*) > 1
-        )
         SELECT _file_year, claim_id, COUNT(*) FROM stay_filtered
-        SEMI JOIN repeated USING (_file_year, claim_id)
+        SEMI JOIN _stay_repeated USING (_file_year, claim_id)
         GROUP BY _file_year, claim_id
         HAVING COUNT(DISTINCT ({", ".join(compare)})) > 1
         ORDER BY ALL LIMIT 10
     """).fetchall()
+    conn.execute("DROP TABLE _stay_repeated")
     if conflicts:
         raise ValueError(f"Repeated claim_ids whose copies disagree (year file, claim_id, copies), "
                          f"first 10: {conflicts} (IP-R07)")
@@ -308,22 +338,29 @@ def prepare_claims(
     # ran out of memory (IP-R55 a). Same rows: copies tied on raw_filename are identical (the
     # IP-R07 check above; for NULL claim_id, by the partition)
     cmp_sql = ", ".join(compare)
-    conn.execute(f"""
-        CREATE OR REPLACE TABLE stay_claims AS
-        (SELECT * FROM stay_filtered WHERE rowid IN (SELECT rid FROM (
-            SELECT rowid AS rid,
-                   ROW_NUMBER() OVER (PARTITION BY {cmp_sql}, _file_year ORDER BY raw_filename) AS rn
-            FROM stay_filtered WHERE claim_id IS NULL) WHERE rn = 1))
-        UNION ALL BY NAME
-        (SELECT * FROM stay_filtered WHERE rowid IN (SELECT rid FROM (
-            SELECT rowid AS rid,
-                   ROW_NUMBER() OVER (PARTITION BY _file_year, claim_id ORDER BY raw_filename) AS rn
-            FROM stay_filtered WHERE claim_id IS NOT NULL) WHERE rn = 1))
-    """)
-    diag["claims_duplicate_copies_removed"] = (_count(conn, "stay_filtered WHERE claim_id IS NOT NULL")
-                                               - _count(conn, "stay_claims WHERE claim_id IS NOT NULL"))
-    diag["claims_null_claim_id_copies_removed"] = (_count(conn, "stay_filtered WHERE claim_id IS NULL")
-                                                   - _count(conn, "stay_claims WHERE claim_id IS NULL"))
+    # With no repeats of either kind the dedup would keep every row: the table is renamed instead
+    # of rebuilt. The NULL-claim_id groups are the dedup's own partitions
+    n_null_repeated = _count(conn, f"""(SELECT 1 FROM stay_filtered WHERE claim_id IS NULL
+        GROUP BY {cmp_sql}, _file_year HAVING COUNT(*) > 1)""")
+    n_before = conn.execute("SELECT COUNT(*) FILTER (WHERE claim_id IS NOT NULL), "
+                            "COUNT(*) FILTER (WHERE claim_id IS NULL) FROM stay_filtered").fetchone()
+    if n_repeated or n_null_repeated or not _rename_table(conn, "stay_filtered", "stay_claims"):
+        conn.execute(f"""
+            CREATE OR REPLACE TABLE stay_claims AS
+            (SELECT * FROM stay_filtered WHERE rowid IN (SELECT rid FROM (
+                SELECT rowid AS rid,
+                       ROW_NUMBER() OVER (PARTITION BY {cmp_sql}, _file_year ORDER BY raw_filename) AS rn
+                FROM stay_filtered WHERE claim_id IS NULL) WHERE rn = 1))
+            UNION ALL BY NAME
+            (SELECT * FROM stay_filtered WHERE rowid IN (SELECT rid FROM (
+                SELECT rowid AS rid,
+                       ROW_NUMBER() OVER (PARTITION BY _file_year, claim_id ORDER BY raw_filename) AS rn
+                FROM stay_filtered WHERE claim_id IS NOT NULL) WHERE rn = 1))
+        """)
+    n_after = conn.execute("SELECT COUNT(*) FILTER (WHERE claim_id IS NOT NULL), "
+                           "COUNT(*) FILTER (WHERE claim_id IS NULL) FROM stay_claims").fetchone()
+    diag["claims_duplicate_copies_removed"] = n_before[0] - n_after[0]
+    diag["claims_null_claim_id_copies_removed"] = n_before[1] - n_after[1]
     # Rows (not groups) with NULL claim_id identical but for their year file: kept, counted only
     # (IP-R47 c)
     no_year = ", ".join(c for c in compare if c != "year")
@@ -653,13 +690,17 @@ def _link_claims(conn: duckdb.DuckDBPyConnection, cols: dict[str, str], island_c
     diag: dict = {}
     key = ", ".join(LINK_KEY)
 
+    # Progress lines name the sub-step about to run, so the log's last line is the one running
+    LOGGER.info("Linking 1/6: sorting claims into claim order (md5 tie-break)")
     # 9. Claim order, sorted on a narrow projection (rowid -> claim_rid), joined to the claims once
     # at the end. The last tie-break is an md5 of the other columns (`_row_text`, IP-R48 b), so the
-    # order doesn't depend on input order (NULL claim_ids included)
+    # order doesn't depend on input order (NULL claim_ids included). It's computed for NULL
+    # claim_ids only: a non-NULL claim_id is unique after step 1 (repeats removed, IP-R07; none in
+    # two year files, IP-R06), so it already breaks every tie and the order is the same
     ordered = LINK_KEY + ["link_adm", "srvc_bgn_dt", "link_dis"]
     rest = {c: t for c, t in cols.items() if c not in ordered + ["claim_id"]}
     order = (f"{', '.join(f'{c} NULLS LAST' for c in ordered)}, {CLASS_RANK}, claim_id NULLS LAST, "
-             f"md5({_row_text(rest)})")
+             f"CASE WHEN claim_id IS NULL THEN md5({_row_text(rest)}) END")
     if conn.execute("SELECT current_setting('preserve_insertion_order')").fetchone()[0]:
         # An ORDER BY result is stored in order, so its rowid is the rank. Much faster than an
         # unpartitioned ROW_NUMBER, which duckdb 1.0.0 runs on one thread (minutes per million rows)
@@ -671,6 +712,7 @@ def _link_claims(conn: duckdb.DuckDBPyConnection, cols: dict[str, str], island_c
         conn.execute(f"CREATE OR REPLACE TEMP TABLE _stay_order AS "
                      f"SELECT rowid AS _row, ROW_NUMBER() OVER (ORDER BY {order}) AS claim_rid FROM stay_claims")
 
+    LOGGER.info("Linking 2/6: finding touch-islands of linkable claims")
     # 10a. Touch-islands of linkable claims: within a key, in claim order (link_adm ascending), a
     # claim starts a new island when it begins more than a day after every earlier claim ended.
     # Every link lies inside an island (IP-R46)
@@ -695,6 +737,8 @@ def _link_claims(conn: duckdb.DuckDBPyConnection, cols: dict[str, str], island_c
     """).fetchall()
     diag["link_island_size_max"] = largest[0][1] if largest else 0
     diag["link_island_sizes_top"] = [["NULL" if s is None else s, n] for s, n, _, _ in largest]
+    LOGGER.info(f"Linking: {_count(conn, '_stay_link')} linkable claims in touch-islands; largest "
+                f"islands (state, claims): {diag['link_island_sizes_top']}")
     if largest and largest[0][1] > island_cap:
         top = [("NULL" if s is None else s, n, str(a), str(b)) for s, n, a, b in largest]
         raise ValueError(f"A group of touching same-key claims holds {largest[0][1]} claims, over "
@@ -705,6 +749,7 @@ def _link_claims(conn: duckdb.DuckDBPyConnection, cols: dict[str, str], island_c
     # uses strict overlap (IP-R24); the `overlap` flag leaves out containment (attribution only,
     # same links). `contiguous`: admission on or the day after the other's discharge, when that
     # preceding claim's status is 30 or NULL (Table 1; other values block, IP-R31)
+    LOGGER.info("Linking 3/6: pairing touching claims within islands")
     contain = ("((a.link_adm <= b.link_adm AND b.link_dis <= a.link_dis) "
                "OR (b.link_adm <= a.link_adm AND a.link_dis <= b.link_dis))")
     conn.execute(f"""
@@ -726,9 +771,12 @@ def _link_claims(conn: duckdb.DuckDBPyConnection, cols: dict[str, str], island_c
     # 10d. Stays = components of the links (IP-R23). An island with no blocked pair is one stay;
     # the others go to `_components`
     blocked = "SELECT DISTINCT island FROM _stay_pairs WHERE NOT linked"
+    LOGGER.info(f"Linking 4/6: {_count(conn, '_stay_pairs')} touching pairs; connected components of "
+                f"islands with a blocked pair")
     rounds, uf_edges = _components(
         conn, f"SELECT rid FROM _stay_link WHERE island IN ({blocked})",
         f"SELECT a, b FROM _stay_pairs WHERE linked AND island IN ({blocked})", "_stay_comp")
+    LOGGER.info("Linking 5/6: writing stay_id onto stay_claims")
     conn.execute("""
         CREATE OR REPLACE TABLE stay_claims AS
         SELECT o.claim_rid, s.*, COALESCE(c.comp, l.island, o.claim_rid) AS stay_id
@@ -739,6 +787,7 @@ def _link_claims(conn: duckdb.DuckDBPyConnection, cols: dict[str, str], island_c
     diag["link_component_sql_rounds"] = rounds
     diag["link_component_uf_edges"] = uf_edges
 
+    LOGGER.info("Linking 6/6: diagnostics (link conditions, stay sizes, zero-length and E17 bridging)")
     _link_diagnostics(conn, diag)
     LOGGER.info(f"Linking: {diag['stays']} stays ({diag['stays_non_linkable_single']} non-linkable "
                 f"singles) from {diag['link_edges']} links; largest stay {diag['stay_size_max']} claims, "
@@ -802,6 +851,7 @@ def _link_diagnostics(conn: duckdb.DuckDBPyConnection, diag: dict) -> None:
 
     # Zero-length claims that bridge: the stay's other linkable claims would form 2+ stays without
     # them (IP-R46 c)
+    LOGGER.info("Linking diagnostics: zero-length bridging")
     _split_if_removed(conn, "link_adm = link_dis", "_stay_split")
     diag["stays_zero_length_bridged"] = _nested_counts(conn, """
         SELECT stay_state, COUNT(*) FROM _stay_split JOIN _stay_state USING (stay_id)
@@ -810,6 +860,7 @@ def _link_diagnostics(conn: duckdb.DuckDBPyConnection, diag: dict) -> None:
     # E17 (plan §3b, IP-R21, IP-R46): stays whose base claims would form 2+ stays without their 5/E
     # and long claims. Kind = the excluded claims the stay has; conditions are counted on links
     # between an excluded and a base claim only
+    LOGGER.info("Linking diagnostics: E17 bridging (5/E and long claims)")
     _split_if_removed(conn, "e17_5e OR e17_long", "_stay_split")
     diag["e17_bridged_stays"] = _nested_counts(conn, """
         WITH k AS (
@@ -922,6 +973,7 @@ def _components_run(conn: duckdb.DuckDBPyConnection, nodes_sql: str, edges_sql: 
             SELECT m.rid, LEAST(m.l, j.l) AS l FROM m JOIN m j ON j.rid = m.l
         """)
         changed = _count(conn, "_cc_lab JOIN _cc_lab2 USING (rid) WHERE _cc_lab.l <> _cc_lab2.l")
+        LOGGER.info(f"Components ({out}): round {used}/{sql_rounds}, {changed} of {n_nodes} labels changed")
         conn.execute("CREATE OR REPLACE TEMP TABLE _cc_lab AS FROM _cc_lab2")
         if not changed:
             break
@@ -930,6 +982,7 @@ def _components_run(conn: duckdb.DuckDBPyConnection, nodes_sql: str, edges_sql: 
         SELECT DISTINCT la.l, lb.l FROM _cc_e e
         JOIN _cc_lab la ON la.rid = e.a JOIN _cc_lab lb ON lb.rid = e.b WHERE la.l < lb.l
     """).fetchall()
+    LOGGER.info(f"Components ({out}): union-find on {len(pairs)} label pairs in Python")
     parent: dict[int, int] = {}
 
     def find(x: int) -> int:
@@ -1130,6 +1183,7 @@ def aggregate_stays(
         raise ValueError(f"A code list is longer than {CODE_POS_FACTOR - 1} elements "
                          f"({dict(zip((c for c, _ in CODE_LISTS), lens))}); the code order key needs "
                          f"fewer (CODE_POS_FACTOR)")
+    LOGGER.info("Aggregating claims into stays (step 4)")
     try:
         return _aggregate_stays(conn, crossover, list(file_years), dict(first_taf_year), out_table)
     finally:  # on errors too
