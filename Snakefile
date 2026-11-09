@@ -19,6 +19,21 @@ TABLES = config["tables"]
 YEARS = list(map(int, config["years"]))
 
 BASEPATH = config["paths"]["basepath"]
+
+
+def hydra_value(v):
+    # paths.basepath may be one path or a list of roots (e.g. MAX and TAF in separate folders; every
+    # path_pattern is expanded against every root). Snakemake joins a list param with spaces in a
+    # shell command, so a list goes to Hydra as ['a','b']. Hydra keeps backslashes in quoted strings
+    # except before a quote: a ' in a path is escaped, and a trailing separator is dropped (it would
+    # escape the closing quote)
+    if isinstance(v, (list, tuple)):
+        items = [str(p).rstrip("/\\") or str(p) for p in v]
+        return "[" + ",".join("'" + p.replace("'", "\\'") + "'" for p in items) + "]"
+    return v
+
+
+BASEPATH_ARG = hydra_value(BASEPATH)
 OUTDIR = config["paths"]["output_path"]
 CROSSWALKS = config["paths"]["crosswalks_path"]
 
@@ -86,7 +101,7 @@ rule build_stays:
     # (e.g. `snakemake -n`) and whose API differs across Snakemake versions (RR-1).
     threads: int(DUCKDB["threads"]) if DUCKDB.get("threads") else 64
     params:
-        basepath=BASEPATH,
+        basepath=BASEPATH_ARG,
         crosswalks=CROSSWALKS,
         outdir=lambda wc: f"{OUTDIR}/{wc.table}",
         years="[" + ",".join(str(y) for y in YEARS) + "]",
@@ -114,7 +129,7 @@ rule harmonize:
     log:
         "logs/harmonize_{table}_{year}.log"
     params:
-        basepath=BASEPATH,
+        basepath=BASEPATH_ARG,
         crosswalks=CROSSWALKS,
         outdir=lambda wc: f"{OUTDIR}/{wc.table}",
         hydra_dir=lambda wc: f"logs/hydra/harmonize/{wc.table}/{wc.year}"
@@ -139,7 +154,7 @@ rule qc:
     log:
         "logs/qc_{table}_{year}.log"
     params:
-        basepath=BASEPATH,
+        basepath=BASEPATH_ARG,
         crosswalks=CROSSWALKS,
         outdir=lambda wc: f"{OUTDIR}/{wc.table}",
         hydra_dir=lambda wc: f"logs/hydra/qc/{wc.table}/{wc.year}"

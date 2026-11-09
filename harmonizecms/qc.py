@@ -5,10 +5,12 @@ import json
 import os
 import time
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 import duckdb
 import yaml
+
+from .io import _normalize_basepaths, resolve_input_patterns
 
 
 def _read_yaml(path: str) -> dict:
@@ -60,11 +62,19 @@ def _qident(name: str) -> str:
     return '"' + str(name).replace('"', '""') + '"'
 
 
-def _resolve_template(path_template: str, *, basepath: str, crosswalks_path: Optional[str], year: int) -> str:
+def _resolve_template(path_template: str, *, basepath: str | Iterable[str], crosswalks_path: Optional[str],
+                      year: int) -> str:
     """
-    Resolve {basepath}, {crosswalks_path}, {year} placeholders.
+    Resolve {basepath}, {crosswalks_path}, {year} placeholders. {basepath} needs exactly one basepath
+    (as harmonizer._resolve_template).
     """
-    resolved = str(path_template).replace("{basepath}", basepath).replace("{year}", str(year))
+    resolved = str(path_template).replace("{year}", str(year))
+    if "{basepath}" in resolved:
+        basepaths = _normalize_basepaths(basepath)
+        if len(basepaths) != 1:
+            raise ValueError("Template resolution with {basepath} requires exactly one basepath; "
+                             "use {crosswalks_path} for shared lookup roots.")
+        resolved = resolved.replace("{basepath}", basepaths[0])
     if "{crosswalks_path}" in resolved:
         if not crosswalks_path:
             raise ValueError("crosswalks_path is required because {crosswalks_path} is used in a crosswalk path.")
@@ -142,7 +152,7 @@ def check_rollup_builds(output_path: str, table_name: str, years: Optional[list[
 
 def run_qc(
     table_config_path: str,
-    basepath: str,
+    basepath: str | Iterable[str],
     output_parquet_path: str,
     year: int,
     qc_dir: Optional[str] = None,
@@ -203,8 +213,8 @@ def run_qc(
 
         import glob
         input_candidates = []
-        for pat in path_patterns:
-            pat2 = pat.replace("{basepath}", basepath).replace("{year}", str(year))
+        # Every pattern against every basepath (one or a list, e.g. MAX and TAF roots)
+        for pat2 in resolve_input_patterns(basepath=basepath, year=year, path_patterns=path_patterns):
             input_candidates.extend(glob.glob(pat2))
         input_first = input_candidates[0] if input_candidates else None
 
