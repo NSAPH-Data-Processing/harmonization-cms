@@ -1,0 +1,5 @@
+name: medicare_partb
+dirs:
+  input: null
+  output:
+    partb: null

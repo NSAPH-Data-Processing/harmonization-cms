@@ -1,0 +1,79 @@
+# Draft mapping proposal based on the requested field list and ResDAC's
+# Original Medicare FFS Outpatient data documentation. Confirm source product,
+# per-year parquet schemas, date encodings, and the diagnosis array shape before
+# running or treating this mapping as final.
+table_name: partb
+description: >-
+  Proposed claim-level mapping for Original Medicare FFS Outpatient base claims.
+  The source product and the 2016-2018 parquet layouts still require owner/HPC
+  confirmation. CLM_FROM_DT and CLM_THRU_DT are passed through until their
+  parquet types and date encodings are confirmed.
+
+# Intentionally empty until the owner supplies the approved HPC parquet path
+# pattern. Do not substitute a guessed glob.
+path_pattern: []
+
+columns:
+  - bene_id:
+      source: BENE_ID
+      type: VARCHAR
+      description: Encrypted CCW beneficiary identifier.
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - clm_id:
+      source: CLM_ID
+      type: VARCHAR
+      description: CCW claim identifier.
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - clm_from_dt:
+      source: CLM_FROM_DT
+      type: DATE
+      description: Statement covers from date; confirm parquet type and encoding before adding a cast.
+
+  - clm_thru_dt:
+      source: CLM_THRU_DT
+      type: DATE
+      description: Statement covers through date; confirm parquet type and encoding before adding a cast.
+
+  - clm_fac_type_cd:
+      source: CLM_FAC_TYPE_CD
+      type: VARCHAR
+      description: Facility type code, a component of institutional type of bill.
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - clm_freq_cd:
+      source: CLM_FREQ_CD
+      type: VARCHAR
+      description: Claim frequency/sequence code, the third type-of-bill component.
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - ptnt_dschrg_stus_cd:
+      source: PTNT_DSCHRG_STUS_CD
+      type: VARCHAR
+      description: Patient status as of the claim through date.
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - prncpal_dgns_cd:
+      source: PRNCPAL_DGNS_CD
+      type: VARCHAR
+      description: Principal diagnosis code; ResDAC documents this as redundant with ICD_DGNS_CD1.
+      cast:
+        "*": "TRY_CAST({column_name} AS VARCHAR)"
+
+  - icd_dgns_cd:
+      kind: array
+      type: "VARCHAR[]"
+      description: Ordered ICD diagnosis code slots 1-25; slot 1 duplicates the principal diagnosis field.
+      source_component_sets:
+        - [ICD_DGNS_CD1, ICD_DGNS_CD2, ICD_DGNS_CD3, ICD_DGNS_CD4, ICD_DGNS_CD5,
+           ICD_DGNS_CD6, ICD_DGNS_CD7, ICD_DGNS_CD8, ICD_DGNS_CD9, ICD_DGNS_CD10,
+           ICD_DGNS_CD11, ICD_DGNS_CD12, ICD_DGNS_CD13, ICD_DGNS_CD14, ICD_DGNS_CD15,
+           ICD_DGNS_CD16, ICD_DGNS_CD17, ICD_DGNS_CD18, ICD_DGNS_CD19, ICD_DGNS_CD20,
+           ICD_DGNS_CD21, ICD_DGNS_CD22, ICD_DGNS_CD23, ICD_DGNS_CD24, ICD_DGNS_CD25]
+      element_cast: "TRY_CAST({column_name} AS VARCHAR)"
